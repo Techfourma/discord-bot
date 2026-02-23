@@ -1,5 +1,13 @@
-import discord
-from discord.ext import commands, tasks
+try:
+    import discord
+    from discord.ext import commands, tasks
+except ImportError:
+    # allow the module to be imported in environments without discord
+    class _Dummy:
+        pass
+    discord = _Dummy()
+    commands = _Dummy()
+    tasks = _Dummy()
 import logging
 import os
 import time as py_time
@@ -209,7 +217,33 @@ def is_admin(member: discord.Member) -> bool:
 # JADWAL KULIAH
 WIB = timezone(timedelta(hours=7))
 
+# helper untuk mengirimkan daftar jadwal dalam beberapa pesan jika melebihi batas
+async def send_jadwal_list(channel, jadwal_list, header: str = ""):
+    """Kirimkan isi jadwal_list ke channel dengan header opsional.
+    Membagi pesan menjadi beberapa kiriman agar tidak melampaui batas 2000 karakter.
+    """
+    if not jadwal_list:
+        await channel.send("📚 Tidak ada jadwal.")
+        return
+
+    msg = header
+    for j in jadwal_list:
+        entry = f"**{j['header']}**\n```{j['content']}```\n\n"
+        # jika menambahkan entry akan melebihi batas, kirim dulu apa yang ada
+        if len(msg) + len(entry) > 1900:
+            await channel.send(msg)
+            msg = ""
+        msg += entry
+    if msg:
+        await channel.send(msg)
+
+
 def parse_jadwal_file():
+    """Membaca dan memecah file jadwal, lalu mengeluarkan daftar entry.
+
+    Setiap entry sekarang juga menyimpan tanggal awal/akhir yang diparsing
+    sehingga pencarian berdasarkan bulan atau tanggal menjadi mudah.
+    """
     try:
         with open('jadwal_kuliah.txt', 'r', encoding='utf-8') as file:
             content = file.read()
@@ -226,10 +260,17 @@ def parse_jadwal_file():
             if len(lines) < 2:
                 continue
                 
+            header = lines[0].strip()
+            content_text = lines[1].strip()
+
+            start_date, end_date = parse_date_from_header(header)
+
             jadwal_list.append({
-                "header": lines[0].strip(), 
-                "content": lines[1].strip(),
-                "raw": section
+                "header": header,
+                "content": content_text,
+                "raw": section,
+                "start_date": start_date,
+                "end_date": end_date,
             })
         
         logger.info(f"✅ Parsed {len(jadwal_list)} jadwal")
@@ -237,10 +278,10 @@ def parse_jadwal_file():
         
     except FileNotFoundError:
         logger.error("❌ jadwal_kuliah.txt not found")
-        return [{"header": "Error", "content": "File tidak ditemukan", "raw": "Error"}]
+        return [{"header": "Error", "content": "File tidak ditemukan", "raw": "Error", "start_date": None, "end_date": None}]
     except Exception as e:
         logger.error(f"❌ Error parsing jadwal: {e}")
-        return [{"header": "Error", "content": f"Parse error: {e}", "raw": "Error"}]
+        return [{"header": "Error", "content": f"Parse error: {e}", "raw": "Error", "start_date": None, "end_date": None}]
 
 def parse_date_from_header(header: str):
     try:
@@ -262,7 +303,7 @@ def parse_date_from_header(header: str):
             end_month = month_map.get(match.group(4).lower(), 1)
             
             year_match = re.search(r'(\d{4})', header)
-            year = int(year_match.group(1)) if year_match else 2025
+            year = int(year_match.group(1)) if year_match else datetime.now(WIB).year
             
             start_date = datetime(year, start_month, start_day).date()
             end_date = datetime(year, end_month, end_day).date()
@@ -279,7 +320,7 @@ def parse_date_from_header(header: str):
                 start_month = month_map.get(start_match.group(2).lower(), 1)
                 
                 year_match = re.search(r'(\d{4})', header)
-                year = int(year_match.group(1)) if year_match else 2025
+                year = int(year_match.group(1)) if year_match else datetime.now(WIB).year
                 
                 start_date = datetime(year, start_month, start_day).date()
                 
@@ -347,6 +388,96 @@ def get_jadwal_this_week():
 def get_jadwal_next_week():
     return get_jadwal_range(7, 13)
 
+
+def find_jadwal_by_month(month: int, year: Optional[int] = None):
+    """Cari semua entry jadwal yang mencakup bulan (dan tahun) tertentu.
+
+    Ditujukan untuk mendukung kueri "jadwal bulan maret" bahkan jika sudah
+    lampau. Fungsi akan mengembalikan daftar entry yang mempunyai rentang
+    tanggal di bulan tersebut. (Iterasi harian sederhana untuk menangani
+    rentang yang melintasi akhir bulan/tahun.)
+    """
+    jadwal_list = parse_jadwal_file()
+    result = []
+
+    for jadwal in jadwal_list:
+        if jadwal.get('header') == 'Error':
+            continue
+        s_date = jadwal.get('start_date')
+        e_date = jadwal.get('end_date')
+        if not s_date or not e_date:
+            continue
+
+        if year and s_date.year != year and e_date.year != year:
+            continue
+
+        d = s_date
+        while d <= e_date:
+            if d.month == month and (not year or d.year == year):
+                result.append(jadwal)
+                break
+            d += timedelta(days=1)
+
+    return result
+
+
+def parse_date_from_prompt(prompt: str) -> Optional[datetime.date]:
+    """Deteksi tanggal spesifik (DD Month [YYYY]) dari string.
+
+    Contoh teks yang didukung:
+      - "5 maret"
+      - "tanggal 12 april 2025"
+      - "20 December"
+    Jika ditemukan, kembalikan objek date. Tahun default 2025 jika tidak
+    disebutkan (sama seperti parser header jadwal sebelumnya).
+    """
+    month_map = {
+        'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
+        'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+    }
+
+    # cari pola angka + nama bulan
+    match = re.search(r"(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?", prompt)
+    if not match:
+        return None
+
+    day = int(match.group(1))
+    month_str = match.group(2).lower()
+    month = month_map.get(month_str)
+    year = int(match.group(3)) if match.group(3) else datetime.now(WIB).year
+
+    if not month:
+        return None
+
+    try:
+        return datetime(year, month, day).date()
+    except ValueError:
+        return None
+
+
+def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[int]]]:
+    """Ekstrak nama bulan (dan opsional tahun) dari teks.
+
+    Mengembalikan pasangan (bulan, tahun) atau None jika tidak ada bulan.
+    """
+    month_map = {
+        'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
+        'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+    }
+
+    # cari nama bulan dalam teks
+    for name, num in month_map.items():
+        if re.search(r"\b" + re.escape(name) + r"\b", prompt.lower()):
+            year_match = re.search(r"(\d{4})", prompt)
+            year = int(year_match.group(1)) if year_match else datetime.now(WIB).year
+            return num, year
+    return None
+
+
 # BACKGROUND TASKS
 @tasks.loop(time=dt_time(hour=8, minute=0, tzinfo=WIB))
 async def daily_jadwal_reminder():
@@ -411,26 +542,84 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
 async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     prompt_lower = user_prompt.lower()
 
+    # deteksi intent umum
     jadwal_intents = [
         "jadwal", "cek jadwal", "lihat jadwal", "info jadwal",
         "jadwal kuliah", "jadwal uas", "jadwal elearning",
         "jadwal minggu", "jadwal hari", "kapan kuliah", "uas kapan"
     ]
 
-    if any(intent in prompt_lower for intent in jadwal_intents):
-        jadwal = get_jadwal_this_week()
-        if not jadwal:
-            await msg.channel.send("📚 Tidak ada jadwal.")
-            return True
+    if not any(intent in prompt_lower for intent in jadwal_intents):
+        return False
 
-        resp = "📚 **JADWAL KULIAH**\n\n"
-        for j in jadwal:
-            resp += f"**{j['header']}**\n```{j['content']}```\n\n"
+    # waktu relatif (besok, hari ini, minggu ini, minggu depan)
+    if "minggu depan" in prompt_lower:
+        jadwal_list = get_jadwal_next_week()
+        await send_jadwal_list(msg.channel, jadwal_list, header="📚 **JADWAL MINGGU DEPAN**\n\n")
+        return True
+    if "minggu ini" in prompt_lower:
+        jadwal_list = get_jadwal_this_week()
+        await send_jadwal_list(msg.channel, jadwal_list, header="📚 **JADWAL MINGGU INI**\n\n")
+        return True
+    if "besok" in prompt_lower:
+        jadwal = get_jadwal_tomorrow()
+        if jadwal:
+            await msg.channel.send(
+                f"📚 **JADWAL UNTUK BESOK ({jadwal['header']})**\n\n```{jadwal['content']}```"
+            )
+        else:
+            await msg.channel.send("📚 Tidak ada jadwal untuk besok.")
+        return True
+    if "hari ini" in prompt_lower or "sekarang" in prompt_lower:
+        jadwal = get_current_jadwal()
+        if jadwal:
+            await msg.channel.send(
+                f"📚 **JADWAL UNTUK HARI INI ({jadwal['header']})**\n\n```{jadwal['content']}```"
+            )
+        else:
+            await msg.channel.send("📚 Tidak ada jadwal untuk hari ini.")
+        return True
 
+    # 1. coba cek tanggal spesifik (dd bulan [yyyy])
+    specific_date = parse_date_from_prompt(user_prompt)
+    if specific_date:
+        jadwal = get_jadwal_for_date(specific_date)
+        if jadwal:
+            resp = (
+                f"📚 **JADWAL UNTUK {specific_date.strftime('%d %B %Y')}**\n\n"
+                f"**{jadwal['header']}**\n```{jadwal['content']}```"
+            )
+        else:
+            resp = (
+                f"📚 Tidak ada jadwal untuk tanggal {specific_date.strftime('%d %B %Y')}.")
         await msg.channel.send(resp[:2000])
         return True
-    
-    return False
+
+    # 2. cek bulan yang disebutkan
+    month_info = parse_month_year_from_prompt(user_prompt)
+    if month_info:
+        month_num, year = month_info
+        # default ke tahun sekarang jika tidak disebutkan
+        if year is None:
+            year = datetime.now(WIB).year
+        jadwal_list = find_jadwal_by_month(month_num, year)
+        month_name = datetime(year, month_num, 1).strftime('%B')
+        header_prefix = f"📚 **JADWAL BULAN {month_name} {year}**\n\n"
+
+        if jadwal_list:
+            await send_jadwal_list(msg.channel, jadwal_list, header=header_prefix)
+        else:
+            await msg.channel.send(f"📚 Tidak ada jadwal untuk bulan {month_name} {year}.")
+        return True
+
+    # 3. fallback ke pencarian mingguan default
+    jadwal = get_jadwal_this_week()
+    if not jadwal:
+        await msg.channel.send("📚 Tidak ada jadwal.")
+        return True
+
+    await send_jadwal_list(msg.channel, jadwal, header="📚 **JADWAL KULIAH**\n\n")
+    return True
 
 # MESSAGE HANDLER
 @bot.event
