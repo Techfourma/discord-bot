@@ -217,19 +217,27 @@ def is_admin(member: discord.Member) -> bool:
 # JADWAL KULIAH
 WIB = timezone(timedelta(hours=7))
 
-# helper untuk mengirimkan daftar jadwal dalam beberapa pesan jika melebihi batas
+
+# Helper: Format header dan konten jadwal dengan bold dan blok kode, serta perbaiki "Tatap Muka" agar bold dan konsisten
+def format_jadwal_entry(jadwal):
+    header = jadwal['header']
+    # Bold untuk Tatap Muka dan E-Learning
+    if header.lower().startswith('tatap muka'):
+        header_fmt = f"**{header}**"
+    elif header.lower().startswith('e-learning'):
+        header_fmt = f"**{header}**"
+    else:
+        header_fmt = f"**{header}**"
+    return f"{header_fmt}\n```{jadwal['content']}```\n"
+
+# Helper: Kirim jadwal list dengan pemisahan pesan jika panjang
 async def send_jadwal_list(channel, jadwal_list, header: str = ""):
-    """Kirimkan isi jadwal_list ke channel dengan header opsional.
-    Membagi pesan menjadi beberapa kiriman agar tidak melampaui batas 2000 karakter.
-    """
     if not jadwal_list:
         await channel.send("📚 Tidak ada jadwal.")
         return
-
     msg = header
     for j in jadwal_list:
-        entry = f"**{j['header']}**\n```{j['content']}```\n\n"
-        # jika menambahkan entry akan melebihi batas, kirim dulu apa yang ada
+        entry = format_jadwal_entry(j)
         if len(msg) + len(entry) > 1900:
             await channel.send(msg)
             msg = ""
@@ -552,7 +560,17 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     if not any(intent in prompt_lower for intent in jadwal_intents):
         return False
 
-    # waktu relatif (besok, hari ini, minggu ini, minggu depan)
+
+    # waktu relatif (besok, hari ini, minggu ini, minggu depan, bulan depan)
+    now = datetime.now(WIB)
+    if "bulan depan" in prompt_lower:
+        next_month = (now.month % 12) + 1
+        next_year = now.year + 1 if next_month == 1 else now.year
+        jadwal_list = find_jadwal_by_month(next_month, next_year)
+        month_name = datetime(next_year, next_month, 1).strftime('%B')
+        header = f"📚 **JADWAL BULAN {month_name} {next_year}**\n\n"
+        await send_jadwal_list(msg.channel, jadwal_list, header=header)
+        return True
     if "minggu depan" in prompt_lower:
         jadwal_list = get_jadwal_next_week()
         await send_jadwal_list(msg.channel, jadwal_list, header="📚 **JADWAL MINGGU DEPAN**\n\n")
@@ -595,21 +613,17 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         await msg.channel.send(resp[:2000])
         return True
 
+
     # 2. cek bulan yang disebutkan
     month_info = parse_month_year_from_prompt(user_prompt)
     if month_info:
         month_num, year = month_info
-        # default ke tahun sekarang jika tidak disebutkan
         if year is None:
-            year = datetime.now(WIB).year
+            year = now.year
         jadwal_list = find_jadwal_by_month(month_num, year)
         month_name = datetime(year, month_num, 1).strftime('%B')
-        header_prefix = f"📚 **JADWAL BULAN {month_name} {year}**\n\n"
-
-        if jadwal_list:
-            await send_jadwal_list(msg.channel, jadwal_list, header=header_prefix)
-        else:
-            await msg.channel.send(f"📚 Tidak ada jadwal untuk bulan {month_name} {year}.")
+        header = f"📚 **JADWAL BULAN {month_name} {year}**\n\n"
+        await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
 
     # 3. fallback ke pencarian mingguan default
