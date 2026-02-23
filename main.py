@@ -218,19 +218,35 @@ def is_admin(member: discord.Member) -> bool:
 WIB = timezone(timedelta(hours=7))
 
 
-# Helper: Format header dan konten jadwal dengan bold dan blok kode, serta perbaiki "Tatap Muka" agar bold dan konsisten
+# Helper: Format header
 def format_jadwal_entry(jadwal):
     header = jadwal['header']
-    # Bold untuk Tatap Muka dan E-Learning
-    if header.lower().startswith('tatap muka'):
-        header_fmt = f"**{header}**"
-    elif header.lower().startswith('e-learning'):
-        header_fmt = f"**{header}**"
+    content = jadwal['content']
+    # Pisahkan blok Tatap Muka jika ada di dalam content
+    if header.lower().startswith('e-learning'):
+        # Cek apakah ada baris "Tatap muka ..." di content
+        lines = content.split('\n')
+        tatap_idx = next((i for i, l in enumerate(lines) if l.lower().startswith('tatap muka')), None)
+        if tatap_idx is not None:
+            # Pisahkan bagian e-learning dan tatap muka
+            e_learning_part = '\n'.join(lines[:tatap_idx]).strip()
+            tatap_header = lines[tatap_idx].strip()
+            tatap_content = '\n'.join(lines[tatap_idx+1:]).strip()
+            result = f"**{header}**\n"
+            if e_learning_part:
+                result += f"```{e_learning_part}```\n"
+            result += f"**{tatap_header}**\n"
+            if tatap_content:
+                result += f"```{tatap_content}```\n"
+            return result
+        else:
+            return f"**{header}**\n```{content}```\n"
+    elif header.lower().startswith('tatap muka'):
+        return f"**{header}**\n```{content}```\n"
     else:
-        header_fmt = f"**{header}**"
-    return f"{header_fmt}\n```{jadwal['content']}```\n"
+        return f"**{header}**\n```{content}```\n"
 
-# Helper: Kirim jadwal list dengan pemisahan pesan jika panjang
+# Helper: Sending jadwal list
 async def send_jadwal_list(channel, jadwal_list, header: str = ""):
     if not jadwal_list:
         await channel.send("📚 Tidak ada jadwal.")
@@ -446,7 +462,7 @@ def parse_date_from_prompt(prompt: str) -> Optional[datetime.date]:
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     }
 
-    # cari pola angka + nama bulan
+    # Search for number + month name + optional year
     match = re.search(r"(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?", prompt)
     if not match:
         return None
@@ -477,7 +493,7 @@ def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[in
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     }
 
-    # cari nama bulan dalam teks
+    # Search for month name in the prompt
     for name, num in month_map.items():
         if re.search(r"\b" + re.escape(name) + r"\b", prompt.lower()):
             year_match = re.search(r"(\d{4})", prompt)
@@ -550,9 +566,9 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
 async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     prompt_lower = user_prompt.lower()
 
-    # deteksi intent umum
+    #Detect General intent
     jadwal_intents = [
-        "jadwal", "cek jadwal", "lihat jadwal", "info jadwal",
+        "jadwal","mata kuliah", "cek jadwal", "lihat jadwal", "info jadwal",
         "jadwal kuliah", "jadwal uas", "jadwal elearning",
         "jadwal minggu", "jadwal hari", "kapan kuliah", "uas kapan"
     ]
@@ -561,7 +577,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         return False
 
 
-    # waktu relatif (besok, hari ini, minggu ini, minggu depan, bulan depan)
+    # Relative date handling
     now = datetime.now(WIB)
     if "bulan depan" in prompt_lower:
         next_month = (now.month % 12) + 1
@@ -598,7 +614,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
             await msg.channel.send("📚 Tidak ada jadwal untuk hari ini.")
         return True
 
-    # 1. coba cek tanggal spesifik (dd bulan [yyyy])
+    # 1. check (dd bulan [yyyy])
     specific_date = parse_date_from_prompt(user_prompt)
     if specific_date:
         jadwal = get_jadwal_for_date(specific_date)
@@ -614,7 +630,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         return True
 
 
-    # 2. cek bulan yang disebutkan
+    # 2. cek month
     month_info = parse_month_year_from_prompt(user_prompt)
     if month_info:
         month_num, year = month_info
@@ -626,7 +642,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
 
-    # 3. fallback ke pencarian mingguan default
+    # 3. fallback
     jadwal = get_jadwal_this_week()
     if not jadwal:
         await msg.channel.send("📚 Tidak ada jadwal.")
