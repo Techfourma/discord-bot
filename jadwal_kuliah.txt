@@ -1,0 +1,395 @@
+Jadwal Kuliah Kelas TPLE04
+-------------------------
+E-Learning 03 November - 07 November 2025
+- Fisika dasar - pertemuan 12
+- Logika Informatika - pertemuan 12
+- Kalkulus - pertemuan 11 & 12
+- Algoritma dan pemograman - pertemuan 11 & 12
+- Basic academic English - pertemuan 8 
+- Pengantar TI - pertemuan 8
+
+Tatap muka 08 November - Sabtu
+- Pendidikan Agama - pertemuan 8
+- Pendidikan Pancasila - pertemuan 8
+- Fisika dasar - pertemuan 11
+- Logika Informatika - pertemuan 11
+-----------------------------------------
+
+E-Learning 10 November - 14 November 2025
+- Kalkulus - pertemuan 13
+- Algoritma dan pemograman - pertemuan 13
+- Basic academic English - pertemuan 9
+- Pengantar TI - pertemuan 9
+
+Tatap muka 15 November - Sabtu
+- Pendidikan Agama - pertemuan 9
+- Pendidikan Pancasila - pertemuan 9
+- Fisika dasar - pertemuan 13
+- Logika Informatika - pertemuan 13
+--------------------------------------
+E-Learning 17 November - 21 November 2025
+- Fisika dasar - pertemuan 15
+- Logika Informatika - pertemuan 15
+- Kalkulus - pertemuan 14 & 15
+- Algoritma dan pemograman - pertemuan 14 & 15
+- Basic academic English - pertemuan 10 
+- Pengantar TI - pertemuan 10
+
+Tatap muka 22 November - Sabtu
+- Pendidikan Agama - pertemuan 10
+- Pendidikan Pancasila - pertemuan 10
+- Fisika dasar - pertemuan 14
+- Logika Informatika - pertemuan 14
+--------------------------------------
+
+E-Learning 24 November - 28 November 2025
+- Kalkulus - pertemuan 16
+- Algoritma dan pemograman - pertemuan 16
+- Basic academic English - pertemuan 11
+- Pengantar TI - pertemuan 11
+
+Tatap muka 29 November - Sabtu
+- Pendidikan Agama - pertemuan 11
+- Pendidikan Pancasila - pertemuan 11
+- Fisika dasar - pertemuan 16
+- Logika Informatika - pertemuan 16
+
+Tugas Kelompok
+-Pancasila - Kel.3
+-Agama - Kel.6,Kel.7,Kel.8
+-PR Agama - Rangkum seminar international
+-Prepare UTS Logika Susulan - Artikel Media (Pembagian Group)
+-Prepare project Logika - Group
+--------------------------------------
+E-Learning 01 Desember - 05 Desember 2025
+- Fisika dasar - pertemuan 18
+- Logika Informatika - pertemuan 18
+- Kalkulus - pertemuan 17 & 18
+- Algoritma dan pemograman - pertemuan 17 & 18
+- Basic academic English - pertemuan 12 
+- Pengantar TI - pertemuan 12
+
+Tatap muka 06 Desember - Sabtu
+- Pendidikan Agama - pertemuan 12
+- Pendidikan Pancasila - pertemuan 12
+- Fisika dasar - pertemuan 17
+- Logika Informatika - pertemuan 17
+
+Tugas Kelompok
+-Pancasila - Kel.4
+-Agama - Kel.9,Kel.10,Kel.11
+-KAMIS 23:59,04 DEC - DEADLINE LOGIKA PRESENTASI PERT16
+-Memulai membuat artikel Logika - UTS Susulan
+--------------------------------------
+E-Learning 08 Desember - 12 Desember 2025
+- Kalkulus - pertemuan 19
+- Algoritma dan pemograman - pertemuan 19
+- Basic academic English - pertemuan 13
+- Pengantar TI - pertemuan 13
+
+Tatap muka 13 Desember - Sabtu
+- Pendidikan Agama - pertemuan 13
+- Pendidikan Pancasila - pertemuan 13
+- Fisika dasar - pertemuan 19
+- Logika Informatika - pertemuan 19
+
+Tugas Kelompok
+-Pancasila - Kel.5
+-Agama - Kel.12,Kel.13,Kel.14
+-Logic UTS - Artikel post media.
+
+Project Kelompok Logika
+Wajib bawa laptop,minimal 1 orang perkelompok.
+A. Membuat Study kasus dengan format ppt
+ i. wajib ada diagram tree
+ ii.wajib ada data gejala & data diagnosa
+B.Memebawa Jurnal Referensi
+ i. Download jurnal sesuai study kasus anda.
+ ii. Berikan bukti sinta
+C.Membuat sistem
+ i.Aplikasi forward chaining sesuai dengan study kasus.
+
+Agama
+-Setoran hafalan Alfatihah & Artinya
+--------------------------------------
+E-Learning 15 Desember - 19 Desember 2025
+- Fisika dasar - pertemuan 21
+- Logika Informatika - pertemuan 21
+- Kalkulus - pertemuan 20 & 21
+- Algoritma dan pemograman - pertemuan 20 & 21
+- Basic academic English - pertemuan 14 
+- Pengantar TI - pertemuan 14
+
+Tatap muka 20 Desember - Sabtu
+- Pendidikan Agama - pertemuan 14
+- Pendidikan Pancasila - pertemuan 14
+- Fisika dasar - pertemuan 20
+- Logika Informatika - pertemuan 20
+
+Tugas Kelompok
+-Pancasila - Kel.5
+-Setoran hafalan Tahiyat akhir & artinya
+
+Project Forward Chaining dengan web.
+Pengumpulan Tugas Pertemuan 19 
+https://forms.gle/4qkVpbcUhGZVER986
+1. (Yang mengumpulkan hanya ketua kelompok, pastikan nama anggota berada pada file PPT yang disimpan dalam format PDF)
+2. Projek aplikasi yang dibuat, di upload di GitHub, dan linknya sisipkan di dalam study kasus
+3. Didalam study kasus pastikan ada tampilan aplikasi yang sudah dibuat pada point nomer 2
+4. Batas submit Kamis, 18 - Desember - 2025 Pukul 23:59, 
+yang sudah submit dapat dilihat pada link berikut :
+https://docs.google.com/spreadsheets/d/1_jJfJ8t6aO8jNcrDlrcn8plgUaFGXN6o_fKn49f0kNo/edit?usp=sharing
+--------------------------------------
+UAS
+5 Januari - 10 Januari 2026
+--------------------------------------
+Semester 2 - Ganjil
+-------------------------
+E-Learning 02 Maret - 06 Maret 2026
+- Intermediate Academic English - pertemuan 1
+- Pengantar Aplikasi Komputer - pertemuan 1
+- Bahasa Indonesia - pertemuan 1
+- Komunikasi Data - pertemuan 1
+- Pendidikan Kewarganegaraan - pertemuan 1 
+- Sistem Operasi - pertemuan 2
+- Kalkulus II - pertemuan 2
+
+Tatap muka 07 Maret - Sabtu
+- Komputer Grafik - pertemuan 1
+- Komputer dan Masyarakat - pertemuan 1
+- Sistem Operasi - pertemuan 1
+- Kalkulus II - pertemuan 1
+-----------------------------------------
+
+E-Learning 9 Maret - 13 Maret 2026
+- Intermediate Academic English - pertemuan 2
+- Pengantar Aplikasi Komputer - pertemuan 2
+- Bahasa Indonesia - pertemuan 2
+- Komunikasi Data - pertemuan 2
+- Pendidikan Kewarganegaraan - pertemuan 2 
+- Sistem Operasi - pertemuan 4
+- Kalkulus II - pertemuan 4
+
+Tatap muka 14 Maret - Sabtu
+- Komputer Grafik - pertemuan 2
+- Komputer dan Masyarakat - pertemuan 2
+- Sistem Operasi - pertemuan 3
+- Kalkulus II - pertemuan 3
+--------------------------------------
+E-Learning 30 Maret - 3 April 2026
+- Intermediate Academic English - pertemuan 3
+- Pengantar Aplikasi Komputer - pertemuan 3
+- Bahasa Indonesia - pertemuan 3
+- Komunikasi Data - pertemuan 3
+- Pendidikan Kewarganegaraan - pertemuan 3 
+- Sistem Operasi - pertemuan 6
+- Kalkulus II - pertemuan 6
+
+Tatap muka 4 April - Sabtu
+- Komputer Grafik - pertemuan 3
+- Komputer dan Masyarakat - pertemuan 3
+- Sistem Operasi - pertemuan 5
+- Kalkulus II - pertemuan 5
+--------------------------------------
+
+E-Learning 6 April - 10 April 2026
+- Intermediate Academic English - pertemuan 4
+- Pengantar Aplikasi Komputer - pertemuan 4
+- Bahasa Indonesia - pertemuan 4
+- Komunikasi Data - pertemuan 4
+- Pendidikan Kewarganegaraan - pertemuan 4 
+- Sistem Operasi - pertemuan 8
+- Kalkulus II - pertemuan 8
+
+Tatap muka 11 April - Sabtu 
+- Komputer Grafik - pertemuan 4
+- Komputer dan Masyarakat - pertemuan 4
+- Sistem Operasi - pertemuan 7
+- Kalkulus II - pertemuan 7
+
+--------------------------------------
+E-Learning 13 April - 17 April 2026
+- Intermediate Academic English - pertemuan 5
+- Pengantar Aplikasi Komputer - pertemuan 5
+- Bahasa Indonesia - pertemuan 5
+- Komunikasi Data - pertemuan 5
+- Pendidikan Kewarganegaraan - pertemuan 5 
+- Sistem Operasi - pertemuan 10
+- Kalkulus II - pertemuan 10
+
+Tatap muka 18 April - Sabtu 
+- Komputer Grafik - pertemuan 5
+- Komputer dan Masyarakat - pertemuan 5
+- Sistem Operasi - pertemuan 9
+- Kalkulus II - pertemuan 9
+
+--------------------------------------
+
+E-Learning 20 April - 24 April 2026
+- Intermediate Academic English - pertemuan 6
+- Pengantar Aplikasi Komputer - pertemuan 6
+- Bahasa Indonesia - pertemuan 6
+- Komunikasi Data - pertemuan 6
+- Pendidikan Kewarganegaraan - pertemuan 6 
+- Sistem Operasi - pertemuan 12
+- Kalkulus II - pertemuan 12
+
+Tatap muka 25 April - Sabtu 
+- Komputer Grafik - pertemuan 6
+- Komputer dan Masyarakat - pertemuan 6
+- Sistem Operasi - pertemuan 11
+- Kalkulus II - pertemuan 11
+
+--------------------------------------
+E-Learning 27 April - 1 Mei 2026
+- Intermediate Academic English - pertemuan 7
+- Pengantar Aplikasi Komputer - pertemuan 7
+- Bahasa Indonesia - pertemuan 7
+- Komunikasi Data - pertemuan 7
+- Pendidikan Kewarganegaraan - pertemuan 7 
+- Sistem Operasi - pertemuan 14
+- Kalkulus II - pertemuan 14
+
+Tatap muka 2 Mei - Sabtu 
+- Komputer Grafik - pertemuan 7
+- Komputer dan Masyarakat - pertemuan 7
+- Sistem Operasi - pertemuan 13
+- Kalkulus II - pertemuan 13
+- Persiapan UTS dan Kisi-kisi UTS
+-------------------------
+Kerja kelompok dan project
+-
+-
+-------------------------
+Ujian Tengah Semester
+E-Learning 02 Maret - 06 Maret 2026
+- Intermediate Academic English
+- Pengantar Aplikasi Komputer
+- Bahasa Indonesia
+- Komunikasi Data
+- Pendidikan Kewarganegaraan 
+
+Tatap muka 2 Mei - Sabtu 
+- Komputer Grafik
+- Komputer dan Masyarakat
+- Sistem Operasi
+- Kalkulus II
+-------------------------
+Semester 2 - Genap
+-------------------------
+E-Learning 04 Mei - 08 Mei 2026
+- Komputer Grafik - pertemuan 8
+- Komputer dan Masyarakat - pertemuan 8
+- Sistem Operasi - pertemuan 15
+- Kalkulus II - pertemuan 15
+
+Tatap muka 09 Mei - Sabtu
+- Intermediate Academic English - pertemuan 8
+- Pengantar Aplikasi Komputer - pertemuan 8
+- Bahasa Indonesia - pertemuan 8
+- Komunikasi Data - pertemuan 8
+- Pendidikan Kewarganegaraan - pertemuan 8
+-----------------------------------------
+
+E-Learning 11 Mei - 15 Mei 2026
+- Komputer Grafik - pertemuan 9
+- Komputer dan Masyarakat - pertemuan 9
+- Sistem Operasi - pertemuan 16
+- Kalkulus II - pertemuan 16
+
+Tatap muka 16 Mei - Sabtu
+- Intermediate Academic English - pertemuan 9
+- Pengantar Aplikasi Komputer - pertemuan 9
+- Bahasa Indonesia - pertemuan 9
+- Komunikasi Data - pertemuan 9
+- Pendidikan Kewarganegaraan - pertemuan 9
+--------------------------------------
+E-Learning 18 Mei - 22 Mei 2026
+- Komputer Grafik - pertemuan 10
+- Komputer dan Masyarakat - pertemuan 10
+- Sistem Operasi - pertemuan 17
+- Kalkulus II - pertemuan 17
+
+Tatap muka 23 Mei - Sabtu
+- Intermediate Academic English - pertemuan 10
+- Pengantar Aplikasi Komputer - pertemuan 10
+- Bahasa Indonesia - pertemuan 10
+- Komunikasi Data - pertemuan 10
+- Pendidikan Kewarganegaraan - pertemuan 10
+--------------------------------------
+
+E-Learning 01 Juni - 05 Juni 2026
+- Komputer Grafik - pertemuan 11
+- Komputer dan Masyarakat - pertemuan 11
+- Sistem Operasi - pertemuan 18
+- Kalkulus II - pertemuan 18
+
+Tatap muka 6 Juni - Sabtu
+- Intermediate Academic English - pertemuan 11
+- Pengantar Aplikasi Komputer - pertemuan 11
+- Bahasa Indonesia - pertemuan 11
+- Komunikasi Data - pertemuan 11
+- Pendidikan Kewarganegaraan - pertemuan 11
+
+--------------------------------------
+E-Learning 08 Juni - 12 Juni 2026
+- Komputer Grafik - pertemuan 12
+- Komputer dan Masyarakat - pertemuan 12
+- Sistem Operasi - pertemuan 19
+- Kalkulus II - pertemuan 19
+
+Tatap muka 13 Juni - Sabtu
+- Intermediate Academic English - pertemuan 12
+- Pengantar Aplikasi Komputer - pertemuan 12
+- Bahasa Indonesia - pertemuan 12
+- Komunikasi Data - pertemuan 12
+- Pendidikan Kewarganegaraan - pertemuan 12
+
+--------------------------------------
+
+E-Learning 15 Juni - 19 Juni 2026
+- Komputer Grafik - pertemuan 13
+- Komputer dan Masyarakat - pertemuan 13
+- Sistem Operasi - pertemuan 20
+- Kalkulus II - pertemuan 20
+
+Tatap muka 20 Juni - Sabtu
+- Intermediate Academic English - pertemuan 13
+- Pengantar Aplikasi Komputer - pertemuan 13
+- Bahasa Indonesia - pertemuan 13
+- Komunikasi Data - pertemuan 13
+- Pendidikan Kewarganegaraan - pertemuan 13
+
+--------------------------------------
+E-Learning 22 Juni - 26 Juni 2026
+- Komputer Grafik - pertemuan 14
+- Komputer dan Masyarakat - pertemuan 14
+- Sistem Operasi - pertemuan 21
+- Kalkulus II - pertemuan 21
+
+Tatap muka 27 Juni - Sabtu
+- Intermediate Academic English - pertemuan 14
+- Pengantar Aplikasi Komputer - pertemuan 14
+- Bahasa Indonesia - pertemuan 14
+- Komunikasi Data - pertemuan 14
+- Pendidikan Kewarganegaraan - pertemuan 14
+- Persiapan UAS
+-------------------------
+Kerja kelompok dan project
+-
+-
+-------------------------
+Ujian Akhir Semester
+29 Juni - 04 Juli 2026
+E-Learning 
+- Komputer Grafik 
+- Komputer dan Masyarakat
+- Sistem Operasi
+- Kalkulus II
+
+Tatap muka Sabtu
+- Intermediate Academic English
+- Pengantar Aplikasi Komputer 
+- Bahasa Indonesia
+- Komunikasi Data
+- Pendidikan Kewarganegaraan
