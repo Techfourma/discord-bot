@@ -151,14 +151,12 @@ E-Learning 02 Maret - 06 Maret 2026
 - Bahasa Indonesia - pertemuan 1
 - Komunikasi Data - pertemuan 1
 - Pendidikan Kewarganegaraan - pertemuan 1 
-- Sistem Operasi - pertemuan 2
-- Kalkulus II - pertemuan 2
 
 Tatap muka 07 Maret - Sabtu
 - Komputer Grafik - pertemuan 1
 - Komputer dan Masyarakat - pertemuan 1
-- Sistem Operasi - pertemuan 1
-- Kalkulus II - pertemuan 1
+- Sistem Operasi - pertemuan 1&2
+- Kalkulus II - pertemuan 1&2
 -----------------------------------------
 
 E-Learning 9 Maret - 13 Maret 2026
