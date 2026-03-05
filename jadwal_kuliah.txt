@@ -146,9 +146,8 @@ UAS
 Jadwal Kuliah Kelas TPLE04
 Semester Genap 2025/2026
 -------------------------
-
-=== FASE 1: SEBELUM UTS (KELOMPOK 1: TATAP MUKA | KELOMPOK 2: E-LEARNING) ===
-
+Semester 2 - Ganjil
+-------------------------
 E-Learning 02 Maret - 06 Maret 2026
 - Intermediate Academic English - pertemuan 1
 - Pengantar Aplikasi Komputer - pertemuan 1

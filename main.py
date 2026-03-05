@@ -407,7 +407,21 @@ def get_jadwal_range(start_offset: int, end_offset: int):
     return result
 
 def get_jadwal_this_week():
-    return get_jadwal_range(0, 6)
+    today = datetime.now(WIB).date()
+    start = today - timedelta(days=today.weekday())
+    end = start + timedelta(days=6)
+    jadwal_list = parse_jadwal_file()
+    result = []
+    for jadwal in jadwal_list:
+        if jadwal['header'] == 'Error':
+            continue
+        s_date = jadwal.get('start_date')
+        e_date = jadwal.get('end_date')
+        if not s_date or not e_date:
+            continue
+        if s_date <= end and e_date >= start:
+            result.append(jadwal)
+    return result
 
 def get_jadwal_next_week():
     return get_jadwal_range(7, 13)
