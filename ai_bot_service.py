@@ -145,7 +145,7 @@ class SmartAIService:
         return any(keyword in (prompt or "").lower() for keyword in ocr_keywords)
 
     def _ocr_with_gemini(self, image_bytes: bytes, prompt: str) -> str:
-        """OCR menggunakan Gemini Flash (5M token gratis)"""
+        """OCR menggunakan Gemini Flash """
         try:
             model = genai.GenerativeModel("gemini-2.5-flash")
 
