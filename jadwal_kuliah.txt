@@ -158,8 +158,8 @@ E-Learning 02 Maret - 06 Maret 2026
 Tatap Muka Sabtu, 07 Maret 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 1
 - Komputer dan Masyarakat - pertemuan 1
-- Sistem Operasi (3 SKS) - pertemuan 1 & 2
-- Kalkulus II (3 SKS) - pertemuan 1 & 2
+- Sistem Operasi - pertemuan 1
+- Kalkulus II - pertemuan 1
 -----------------------------------------
 
 E-Learning 09 Maret - 13 Maret 2026
@@ -168,14 +168,14 @@ E-Learning 09 Maret - 13 Maret 2026
 - Bahasa Indonesia - pertemuan 2
 - Komunikasi Data - pertemuan 2
 - Pendidikan Kewarganegaraan - pertemuan 2 
-- Sistem Operasi (3 SKS) - pertemuan 3
-- Kalkulus II (3 SKS) - pertemuan 3
+- Sistem Operasi - pertemuan 3
+- Kalkulus II - pertemuan 3
 
 Tatap Muka Sabtu, 14 Maret 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 2
 - Komputer dan Masyarakat - pertemuan 2
-- Sistem Operasi (3 SKS) - pertemuan 4
-- Kalkulus II (3 SKS) - pertemuan 4
+- Sistem Operasi - pertemuan 2
+- Kalkulus II  - pertemuan 2
 --------------------------------------
 
 E-Learning 30 Maret - 03 April 2026
@@ -184,14 +184,12 @@ E-Learning 30 Maret - 03 April 2026
 - Bahasa Indonesia - pertemuan 3
 - Komunikasi Data - pertemuan 3
 - Pendidikan Kewarganegaraan - pertemuan 3 
-- Sistem Operasi (3 SKS) - pertemuan 5
-- Kalkulus II (3 SKS) - pertemuan 5
 
 Tatap Muka Sabtu, 04 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 3
 - Komputer dan Masyarakat - pertemuan 3
-- Sistem Operasi (3 SKS) - pertemuan 6
-- Kalkulus II (3 SKS) - pertemuan 6
+- Sistem Operasi - pertemuan 4
+- Kalkulus II - pertemuan 4
 --------------------------------------
 
 E-Learning 06 April - 10 April 2026
@@ -200,14 +198,14 @@ E-Learning 06 April - 10 April 2026
 - Bahasa Indonesia - pertemuan 4
 - Komunikasi Data - pertemuan 4
 - Pendidikan Kewarganegaraan - pertemuan 4 
-- Sistem Operasi (3 SKS) - pertemuan 7
-- Kalkulus II (3 SKS) - pertemuan 7
+- Sistem Operasi - pertemuan 6
+- Kalkulus II - pertemuan 6
 
 Tatap Muka Sabtu, 11 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 4
 - Komputer dan Masyarakat - pertemuan 4
-- Sistem Operasi (3 SKS) - pertemuan 8
-- Kalkulus II (3 SKS) - pertemuan 8
+- Sistem Operasi - pertemuan 5
+- Kalkulus II - pertemuan 5
 --------------------------------------
 
 E-Learning 13 April - 17 April 2026
@@ -216,14 +214,12 @@ E-Learning 13 April - 17 April 2026
 - Bahasa Indonesia - pertemuan 5
 - Komunikasi Data - pertemuan 5
 - Pendidikan Kewarganegaraan - pertemuan 5 
-- Sistem Operasi (3 SKS) - pertemuan 9
-- Kalkulus II (3 SKS) - pertemuan 9
 
 Tatap Muka Sabtu, 18 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 5
 - Komputer dan Masyarakat - pertemuan 5
-- Sistem Operasi (3 SKS) - pertemuan 10
-- Kalkulus II (3 SKS) - pertemuan 10
+- Sistem Operasi (3 SKS) - pertemuan 7
+- Kalkulus II (3 SKS) - pertemuan 7
 --------------------------------------
 
 E-Learning 20 April - 24 April 2026
@@ -232,14 +228,14 @@ E-Learning 20 April - 24 April 2026
 - Bahasa Indonesia - pertemuan 6
 - Komunikasi Data - pertemuan 6
 - Pendidikan Kewarganegaraan - pertemuan 6 
-- Sistem Operasi (3 SKS) - pertemuan 12
-- Kalkulus II (3 SKS) - pertemuan 12
+- Sistem Operasi - pertemuan 9
+- Kalkulus II - pertemuan 9
 
 Tatap Muka Sabtu, 25 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 6
 - Komputer dan Masyarakat - pertemuan 6
-- Sistem Operasi (3 SKS) - pertemuan 11
-- Kalkulus II (3 SKS) - pertemuan 11
+- Sistem Operasi - pertemuan 8
+- Kalkulus II - pertemuan 8
 --------------------------------------
 
 E-Learning 27 April - 01 Mei 2026
@@ -248,30 +244,38 @@ E-Learning 27 April - 01 Mei 2026
 - Bahasa Indonesia - pertemuan 7
 - Komunikasi Data - pertemuan 7
 - Pendidikan Kewarganegaraan - pertemuan 7 
-- Sistem Operasi (3 SKS) - pertemuan 14
-- Kalkulus II (3 SKS) - pertemuan 14
 
 Tatap Muka Sabtu, 02 Mei 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 7
 - Komputer dan Masyarakat - pertemuan 7
-- Sistem Operasi (3 SKS) - pertemuan 13
-- Kalkulus II (3 SKS) - pertemuan 13
+- Sistem Operasi (3 SKS) - pertemuan 10
+- Kalkulus II (3 SKS) - pertemuan 10
 - Persiapan UTS dan Kisi-kisi UTS
 -------------------------
 
-=== MINGGU UTS ===
-Sabtu, 09 Mei 2026 - Ujian Tengah Semester (Semua Mata Kuliah)
+=== MINGGU UAS ===
+04 Mei - 09 Mei 2026
+E-Learning: 
+- Intermediate Academic English
+- Pengantar Aplikasi Komputer
+- Bahasa Indonesia
+- Komunikasi Data
+- Pendidikan Kewarganegaraan
+
+Tatap Muka (Sabtu):
+- Komputer Grafik
+- Komputer dan Masyarakat
+- Sistem Operasi
+- Kalkulus II
 -------------------------
 
-=== FASE 2: SETELAH UTS (KELOMPOK 1: E-LEARNING | KELOMPOK 2: TATAP MUKA) ===
-
-E-Learning 04 Mei - 08 Mei 2026
+E-Learning 11 Mei - 15 Mei 2026
 - Komputer Grafik - pertemuan 8
 - Komputer dan Masyarakat - pertemuan 8
-- Sistem Operasi (3 SKS) - pertemuan 15
-- Kalkulus II (3 SKS) - pertemuan 15
+- Sistem Operasi - pertemuan 11&12
+- Kalkulus II - pertemuan 11&12
 
-Tatap Muka Sabtu, 09 Mei 2026 (Ruang: Viktor, V.111)
+Tatap Muka Sabtu, 16 Mei 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 8
 - Pengantar Aplikasi Komputer - pertemuan 8
 - Bahasa Indonesia - pertemuan 8
@@ -279,13 +283,13 @@ Tatap Muka Sabtu, 09 Mei 2026 (Ruang: Viktor, V.111)
 - Pendidikan Kewarganegaraan - pertemuan 8
 -----------------------------------------
 
-E-Learning 11 Mei - 15 Mei 2026
+E-Learning 18 Mei - 22 Mei 2026
 - Komputer Grafik - pertemuan 9
 - Komputer dan Masyarakat - pertemuan 9
-- Sistem Operasi (3 SKS) - pertemuan 16
-- Kalkulus II (3 SKS) - pertemuan 16
+- Sistem Operasi - pertemuan 13
+- Kalkulus II - pertemuan 13
 
-Tatap Muka Sabtu, 16 Mei 2026 (Ruang: Viktor, V.111)
+Tatap Muka Sabtu, 23 Mei 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 9
 - Pengantar Aplikasi Komputer - pertemuan 9
 - Bahasa Indonesia - pertemuan 9
@@ -293,13 +297,13 @@ Tatap Muka Sabtu, 16 Mei 2026 (Ruang: Viktor, V.111)
 - Pendidikan Kewarganegaraan - pertemuan 9
 --------------------------------------
 
-E-Learning 18 Mei - 22 Mei 2026
+E-Learning 25 Mei - 29 Mei 2026
 - Komputer Grafik - pertemuan 10
 - Komputer dan Masyarakat - pertemuan 10
-- Sistem Operasi (3 SKS) - pertemuan 17
-- Kalkulus II (3 SKS) - pertemuan 17
+- Sistem Operasi - pertemuan 14&15
+- Kalkulus II - pertemuan 14&15
 
-Tatap Muka Sabtu, 23 Mei 2026 (Ruang: Viktor, V.111)
+Tatap Muka Sabtu, 30 Mei 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 10
 - Pengantar Aplikasi Komputer - pertemuan 10
 - Bahasa Indonesia - pertemuan 10
@@ -310,8 +314,8 @@ Tatap Muka Sabtu, 23 Mei 2026 (Ruang: Viktor, V.111)
 E-Learning 01 Juni - 05 Juni 2026
 - Komputer Grafik - pertemuan 11
 - Komputer dan Masyarakat - pertemuan 11
-- Sistem Operasi (3 SKS) - pertemuan 18
-- Kalkulus II (3 SKS) - pertemuan 18
+- Sistem Operasi - pertemuan 16
+- Kalkulus II - pertemuan 16
 
 Tatap Muka Sabtu, 06 Juni 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 11
@@ -324,8 +328,8 @@ Tatap Muka Sabtu, 06 Juni 2026 (Ruang: Viktor, V.111)
 E-Learning 08 Juni - 12 Juni 2026
 - Komputer Grafik - pertemuan 12
 - Komputer dan Masyarakat - pertemuan 12
-- Sistem Operasi (3 SKS) - pertemuan 19
-- Kalkulus II (3 SKS) - pertemuan 19
+- Sistem Operasi - pertemuan 17&18
+- Kalkulus II - pertemuan 17&18
 
 Tatap Muka Sabtu, 13 Juni 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 12
@@ -338,8 +342,8 @@ Tatap Muka Sabtu, 13 Juni 2026 (Ruang: Viktor, V.111)
 E-Learning 15 Juni - 19 Juni 2026
 - Komputer Grafik - pertemuan 13
 - Komputer dan Masyarakat - pertemuan 13
-- Sistem Operasi (3 SKS) - pertemuan 20
-- Kalkulus II (3 SKS) - pertemuan 20
+- Sistem Operasi - pertemuan 19
+- Kalkulus II - pertemuan 19
 
 Tatap Muka Sabtu, 20 Juni 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 13
@@ -352,8 +356,8 @@ Tatap Muka Sabtu, 20 Juni 2026 (Ruang: Viktor, V.111)
 E-Learning 22 Juni - 26 Juni 2026
 - Komputer Grafik - pertemuan 14
 - Komputer dan Masyarakat - pertemuan 14
-- Sistem Operasi (3 SKS) - pertemuan 21
-- Kalkulus II (3 SKS) - pertemuan 21
+- Sistem Operasi - pertemuan 20&21
+- Kalkulus II - pertemuan 20&21
 
 Tatap Muka Sabtu, 27 Juni 2026 (Ruang: Viktor, V.111)
 - Intermediate Academic English - pertemuan 14
