@@ -168,14 +168,14 @@ E-Learning 09 Maret - 13 Maret 2026
 - Bahasa Indonesia - pertemuan 2
 - Komunikasi Data - pertemuan 2
 - Pendidikan Kewarganegaraan - pertemuan 2 
-- Sistem Operasi (3 SKS) - pertemuan 4
-- Kalkulus II (3 SKS) - pertemuan 4
+- Sistem Operasi (3 SKS) - pertemuan 3
+- Kalkulus II (3 SKS) - pertemuan 3
 
 Tatap Muka Sabtu, 14 Maret 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 2
 - Komputer dan Masyarakat - pertemuan 2
-- Sistem Operasi (3 SKS) - pertemuan 3
-- Kalkulus II (3 SKS) - pertemuan 3
+- Sistem Operasi (3 SKS) - pertemuan 4
+- Kalkulus II (3 SKS) - pertemuan 4
 --------------------------------------
 
 E-Learning 30 Maret - 03 April 2026
@@ -184,14 +184,14 @@ E-Learning 30 Maret - 03 April 2026
 - Bahasa Indonesia - pertemuan 3
 - Komunikasi Data - pertemuan 3
 - Pendidikan Kewarganegaraan - pertemuan 3 
-- Sistem Operasi (3 SKS) - pertemuan 6
-- Kalkulus II (3 SKS) - pertemuan 6
+- Sistem Operasi (3 SKS) - pertemuan 5
+- Kalkulus II (3 SKS) - pertemuan 5
 
 Tatap Muka Sabtu, 04 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 3
 - Komputer dan Masyarakat - pertemuan 3
-- Sistem Operasi (3 SKS) - pertemuan 5
-- Kalkulus II (3 SKS) - pertemuan 5
+- Sistem Operasi (3 SKS) - pertemuan 6
+- Kalkulus II (3 SKS) - pertemuan 6
 --------------------------------------
 
 E-Learning 06 April - 10 April 2026
@@ -200,14 +200,14 @@ E-Learning 06 April - 10 April 2026
 - Bahasa Indonesia - pertemuan 4
 - Komunikasi Data - pertemuan 4
 - Pendidikan Kewarganegaraan - pertemuan 4 
-- Sistem Operasi (3 SKS) - pertemuan 8
-- Kalkulus II (3 SKS) - pertemuan 8
+- Sistem Operasi (3 SKS) - pertemuan 7
+- Kalkulus II (3 SKS) - pertemuan 7
 
 Tatap Muka Sabtu, 11 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 4
 - Komputer dan Masyarakat - pertemuan 4
-- Sistem Operasi (3 SKS) - pertemuan 7
-- Kalkulus II (3 SKS) - pertemuan 7
+- Sistem Operasi (3 SKS) - pertemuan 8
+- Kalkulus II (3 SKS) - pertemuan 8
 --------------------------------------
 
 E-Learning 13 April - 17 April 2026
@@ -216,14 +216,14 @@ E-Learning 13 April - 17 April 2026
 - Bahasa Indonesia - pertemuan 5
 - Komunikasi Data - pertemuan 5
 - Pendidikan Kewarganegaraan - pertemuan 5 
-- Sistem Operasi (3 SKS) - pertemuan 10
-- Kalkulus II (3 SKS) - pertemuan 10
+- Sistem Operasi (3 SKS) - pertemuan 9
+- Kalkulus II (3 SKS) - pertemuan 9
 
 Tatap Muka Sabtu, 18 April 2026 (Ruang: Viktor, V.111)
 - Komputer Grafik - pertemuan 5
 - Komputer dan Masyarakat - pertemuan 5
-- Sistem Operasi (3 SKS) - pertemuan 9
-- Kalkulus II (3 SKS) - pertemuan 9
+- Sistem Operasi (3 SKS) - pertemuan 10
+- Kalkulus II (3 SKS) - pertemuan 10
 --------------------------------------
 
 E-Learning 20 April - 24 April 2026
