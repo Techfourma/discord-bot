@@ -27,8 +27,15 @@ except ImportError:
         async def get_response(self, prompt, user_id, image_bytes=None):
             return f"AI Response untuk: {prompt}"
     ai_bot_service = MockAIBotService()
+    print("🚀 Starting Techfour Bot")
 
-print("🚀 Starting Techfour Bot")
+try:
+    from uang_kas_service import uang_kas_service
+    UANG_KAS_AVAILABLE = True
+except ImportError:
+    UANG_KAS_AVAILABLE = False
+    uang_kas_service = None
+    print("⚠️ uang_kas_service tidak tersedia")
 
 # HEALTH SERVER
 class HealthHandler(BaseHTTPRequestHandler):
@@ -46,9 +53,13 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
 def run_health_server():
-    port = 8080
+    import os
+    
+    port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
+    
     print(f"🌐 Health server running on port {port}")
+    
     try:
         server.serve_forever()
     except Exception as e:
@@ -665,6 +676,169 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     await send_jadwal_list(msg.channel, jadwal, header="📚 **JADWAL KULIAH**\n\n")
     return True
 
+# UANG KAS HANDLER
+async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
+    """
+    Handler untuk request uang kas.
+    Return True jika request ditangani, False jika tidak.
+    """
+    if not UANG_KAS_AVAILABLE or not uang_kas_service:
+        return False
+    
+    if not uang_kas_service._initialized:
+        await uang_kas_service.initialize()
+        if not uang_kas_service._initialized:
+            await msg.channel.send("⚠️ Fitur uang kas belum terkonfigurasi.")
+            return True
+    
+    prompt_lower = user_prompt.lower()
+    
+    # Detect intent uang kas
+    uang_kas_intents = [
+        "uang kas", "kas", "belun bayar", "belum bayar", 
+        "siapa yang belum", "yang belum", "tracking belum",
+        "jumlah uang kas", "saldo kas", "sisa kas",
+        "pengeluaran kas", "total pengeluaran", "pemasukan kas"
+    ]
+    
+    if not any(intent in prompt_lower for intent in uang_kas_intents):
+        return False
+    
+    await msg.channel.typing()
+    
+    try:
+        if "minggu ini" in prompt_lower or "minggu" in prompt_lower:
+            today = datetime.now()
+            if today.weekday() == 0:  
+                unpaid_list = uang_kas_service.get_unpaid_last_week()
+                week_label = "MINGGU LALU"
+            else:
+                unpaid_list = uang_kas_service.get_unpaid_this_week()
+                week_label = "MINGGU INI"
+            
+            response = uang_kas_service.format_unpaid_weekly_response(unpaid_list, week_label)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif "minggu depan" in prompt_lower:
+            await msg.channel.send("⏳ Fitur minggu depan akan segera hadir!")
+            return True
+        
+        elif "semua" in prompt_lower or "detail" in prompt_lower or "lengkap" in prompt_lower:
+            detailed_list = uang_kas_service.get_all_unpaid_detailed()
+            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif any(phrase in prompt_lower for phrase in ["berapa jumlah", "saldo", "sisa"]):
+            if "pengeluaran" in prompt_lower:
+                expenditure = uang_kas_service.get_total_expenditure()
+                response = uang_kas_service.format_expenditure_response(expenditure)
+            elif "pemasukan" in prompt_lower:
+                income = uang_kas_service.get_total_income()
+                response = uang_kas_service.format_income_response(income)
+            else:
+                balance = uang_kas_service.get_current_balance()
+                response = uang_kas_service.format_balance_response(balance)
+            
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif "pengeluaran" in prompt_lower:
+            expenditure = uang_kas_service.get_total_expenditure()
+            response = uang_kas_service.format_expenditure_response(expenditure)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        else:
+            detailed_list = uang_kas_service.get_all_unpaid_detailed()
+            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
+            await msg.channel.send(response[:2000])
+            return True
+            
+    except Exception as e:
+        logger.error(f"❌ Error handling uang kas request: {e}")
+        await msg.channel.send(f"❌ Terjadi kesalahan: {str(e)[:100]}")
+        return True
+
+# UANG KAS HANDLER
+@bot.event
+async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
+    """Handler untuk request uang kas."""
+    prompt_lower = user_prompt.lower()
+    
+    uang_kas_intents = [
+        "uang kas", "kas", "belum bayar", "siapa yang belum",
+        "tracking belum", "jumlah uang kas", "saldo kas", "sisa kas",
+        "pengeluaran kas", "total pengeluaran", "pemasukan kas"
+    ]
+    
+    if not any(intent in prompt_lower for intent in uang_kas_intents):
+        return False
+    
+    if not uang_kas_service._initialized:
+        await uang_kas_service.initialize()
+        if not uang_kas_service._initialized:
+            await msg.channel.send("⚠️ Fitur uang kas belum terkonfigurasi.")
+            return True
+    
+    await msg.channel.typing()
+    
+    try:
+        if "minggu ini" in prompt_lower or "minggu" in prompt_lower:
+            today = datetime.now()
+            if today.weekday() == 0:
+                unpaid_list = await uang_kas_service.get_unpaid_last_week()
+                week_label = "MINGGU LALU"
+            else:
+                unpaid_list = await uang_kas_service.get_unpaid_this_week()
+                week_label = "MINGGU INI"
+            
+            response = uang_kas_service.format_unpaid_weekly_response(unpaid_list, week_label)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif "minggu depan" in prompt_lower:
+            await msg.channel.send("⏳ Fitur minggu depan akan segera hadir!")
+            return True
+        
+        elif "semua" in prompt_lower or "detail" in prompt_lower or "lengkap" in prompt_lower:
+            detailed_list = await uang_kas_service.get_all_unpaid_detailed()
+            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif any(phrase in prompt_lower for phrase in ["berapa jumlah", "saldo", "sisa"]):
+            if "pengeluaran" in prompt_lower:
+                expenditure = await uang_kas_service.get_total_expenditure()
+                response = uang_kas_service.format_expenditure_response(expenditure)
+            elif "pemasukan" in prompt_lower:
+                income = await uang_kas_service.get_total_income()
+                response = uang_kas_service.format_income_response(income)
+            else:
+                balance = await uang_kas_service.get_current_balance()
+                response = uang_kas_service.format_balance_response(balance)
+            
+            await msg.channel.send(response[:2000])
+            return True
+        
+        elif "pengeluaran" in prompt_lower:
+            expenditure = await uang_kas_service.get_total_expenditure()
+            response = uang_kas_service.format_expenditure_response(expenditure)
+            await msg.channel.send(response[:2000])
+            return True
+        
+        else:
+            detailed_list = await uang_kas_service.get_all_unpaid_detailed()
+            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
+            await msg.channel.send(response[:2000])
+            return True
+            
+    except Exception as e:
+        logger.error(f"❌ Error handling uang kas request: {e}")
+        await msg.channel.send(f"❌ Terjadi kesalahan: {str(e)[:100]}")
+        return True
+
 # MESSAGE HANDLER
 @bot.event
 async def on_message(msg):
@@ -699,7 +873,11 @@ async def on_message(msg):
         if await handle_jadwal_request(msg, user_prompt):
             return
         
-        # Priority 3: AI
+        # Priority 3: Uang Kas (TAMBAHAN BARU - 3 BARIS)
+        if await handle_uang_kas_request(msg, user_prompt):
+            return
+        
+        # Priority 4: AI
         if not user_prompt:
             await msg.channel.send("Halo! Ada yang bisa kubantu?")
             return
