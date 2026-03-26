@@ -3,18 +3,12 @@ import logging
 import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-import json
 import aiohttp
 
 logger = logging.getLogger(__name__)
 
-WIB_TIMEZONE = 7
-
 class UangKasService:
-    """
-    Service untuk mengelola data uang kas dari Google Spreadsheet.
-    Menggunakan Google Apps Script API.
-    """
+    """Service untuk mengelola data uang kas dari Google Spreadsheet via Apps Script."""
     
     def __init__(self):
         self.api_url = None
@@ -28,52 +22,59 @@ class UangKasService:
             api_url = os.getenv("GOOGLE_APPS_SCRIPT_URL")
             
             if not api_url:
-                logger.error("❌ GOOGLE_APPS_SCRIPT_URL tidak ditemukan di environment")
+                logger.error("❌ GOOGLE_APPS_SCRIPT_URL tidak ditemukan")
                 return False
             
-            self.api_url = api_url
+            # Hapus trailing slash
+            self.api_url = api_url.rstrip('/')
             
             # Test koneksi
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.api_url}?action=test", timeout=10) as resp:
+                test_url = f"{self.api_url}?action=test"
+                logger.info(f" Testing: {test_url}")
+                async with session.get(test_url, timeout=10) as resp:
+                    logger.info(f"📡 Response status: {resp.status}")
                     if resp.status == 200:
                         self._initialized = True
                         logger.info("✅ UangKasService initialized (Google Apps Script)")
                         return True
                     else:
-                        logger.error(f"❌ Apps Script API tidak responsif: {resp.status}")
+                        logger.error(f"❌ Apps Script API error: {resp.status}")
                         return False
             
         except Exception as e:
             logger.error(f"❌ Error initializing UangKasService: {e}")
             return False
     
-    def _get_cached(self, key: str) -> Optional[any]:
-        """Ambil data dari cache jika masih valid"""
+    def _get_cached(self, key: str):
         if key in self._cache:
             data, timestamp = self._cache[key]
             if datetime.now().timestamp() - timestamp < self._cache_duration:
                 return data
         return None
     
-    def _set_cached(self, key: str, data: any):
-        """Simpan data ke cache"""
+    def _set_cached(self, key: str, data):
         self._cache[key] = (data, datetime.now().timestamp())
     
-    async def _fetch_api(self, action: str) -> Optional[Dict]:
+    async def _fetch_api(self, action: str):
         """Fetch data dari Google Apps Script API"""
         if not self.api_url:
             return None
         
         try:
+            url = f"{self.api_url}?action={action}"
+            logger.info(f"🔍 Fetching: {url}")
+            
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.api_url}?action={action}", timeout=15) as resp:
+                async with session.get(url, timeout=15) as resp:
+                    logger.info(f"📡 Response: {resp.status}")
                     if resp.status == 200:
                         result = await resp.json()
+                        logger.info(f"📦 Result: {result}")
                         if result.get("success"):
                             return result.get("data")
                         else:
-                            logger.error(f"❌ API error: {result.get('error')}")
+                            logger.error(f"❌ API error: {result}")
                     else:
                         logger.error(f"❌ HTTP error: {resp.status}")
         except Exception as e:
@@ -82,7 +83,6 @@ class UangKasService:
         return None
     
     async def _get_all_students_data(self) -> List[Dict]:
-        """Ambil semua data mahasiswa dan status pembayaran"""
         cached = self._get_cached("all_students")
         if cached:
             return cached
@@ -93,11 +93,10 @@ class UangKasService:
         
         students = data.get("students", [])
         self._set_cached("all_students", students)
-        logger.info(f"✅ Loaded {len(students)} students data")
+        logger.info(f"✅ Loaded {len(students)} students")
         return students
     
     async def _get_dashboard_data(self) -> Dict:
-        """Ambil data dari dashboard"""
         cached = self._get_cached("dashboard")
         if cached:
             return cached
@@ -115,7 +114,6 @@ class UangKasService:
         return data
     
     async def get_unpaid_this_week(self) -> List[Dict]:
-        """Dapatkan mahasiswa yang belum bayar untuk minggu ini"""
         students = await self._get_all_students_data()
         if not students:
             return []
@@ -139,7 +137,6 @@ class UangKasService:
         return unpaid_students
     
     async def get_unpaid_last_week(self) -> List[Dict]:
-        """Dapatkan mahasiswa yang belum bayar untuk minggu lalu"""
         students = await self._get_all_students_data()
         if not students:
             return []
@@ -163,7 +160,6 @@ class UangKasService:
         return unpaid_students
     
     async def get_all_unpaid_detailed(self) -> List[Dict]:
-        """Dapatkan SEMUA mahasiswa yang belum bayar dengan detail lengkap"""
         students = await self._get_all_students_data()
         if not students:
             return []
@@ -188,7 +184,6 @@ class UangKasService:
         return detailed_unpaid
     
     async def get_current_balance(self) -> Dict:
-        """Dapatkan saldo uang kas saat ini"""
         dashboard = await self._get_dashboard_data()
         return {
             'total_pemasukan': dashboard.get('total_pemasukan', 0),
@@ -198,17 +193,14 @@ class UangKasService:
         }
     
     async def get_total_expenditure(self) -> int:
-        """Dapatkan total pengeluaran uang kas"""
         dashboard = await self._get_dashboard_data()
         return dashboard.get('total_pengeluaran', 0)
     
     async def get_total_income(self) -> int:
-        """Dapatkan total pemasukan uang kas"""
         dashboard = await self._get_dashboard_data()
         return dashboard.get('total_pemasukan', 0)
     
     def format_unpaid_weekly_response(self, unpaid_list: List[Dict], week_label: str) -> str:
-        """Format response untuk belum bayar mingguan"""
         if not unpaid_list:
             return f"✅ Tidak ada yang belum bayar uang kas {week_label}!"
         
@@ -226,7 +218,6 @@ class UangKasService:
         return response
     
     def format_unpaid_detailed_response(self, detailed_list: List[Dict]) -> str:
-        """Format response untuk detail semua yang belum bayar"""
         if not detailed_list:
             return "✅ Tidak ada yang belum bayar uang kas! Semua sudah lunas 🎉"
         
@@ -252,29 +243,21 @@ class UangKasService:
         return response
     
     def format_balance_response(self, balance: Dict) -> str:
-        """Format response untuk saldo uang kas"""
         response = "💰 **STATUS UANG KAS SAAT INI**\n\n"
         response += f"📥 Total Pemasukan: **Rp {balance['total_pemasukan']:,}**\n"
         response += f"📤 Total Pengeluaran: **Rp {balance['total_pengeluaran']:,}**\n"
         response += f"💵 Sisa Uang Kas: **Rp {balance['sisa_uang_kas']:,}**\n\n"
         
-        status_emoji = {
-            'AMAN': '✅',
-            'WARNING': '⚠️',
-            'BAHAYA': '🚨',
-            'UNKNOWN': '❓'
-        }
+        status_emoji = {'AMAN': '✅', 'WARNING': '⚠️', 'BAHAYA': '🚨', 'UNKNOWN': '❓'}
         emoji = status_emoji.get(balance['status'], '❓')
         response += f"Status: {emoji} **{balance['status']}**"
         
         return response
     
     def format_expenditure_response(self, expenditure: int) -> str:
-        """Format response untuk total pengeluaran"""
         return f"📤 **TOTAL PENGELUARAN UANG KAS**\n\n**Rp {expenditure:,}**"
     
     def format_income_response(self, income: int) -> str:
-        """Format response untuk total pemasukan"""
         return f"📥 **TOTAL PEMASUKAN UANG KAS**\n\n**Rp {income:,}**"
 
 
