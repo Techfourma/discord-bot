@@ -2,31 +2,40 @@ var SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
 function doGet(e) {
   var action = e.parameter.action;
   
+  Logger.log("Action received: " + action);
+  
   if (action == "getStudents") {
     return getStudentsData();
   } else if (action == "getDashboard") {
     return getDashboardData();
   } else if (action == "test") {
-    return ContentService.createTextOutput(JSON.stringify({status: "ok", message: "API berjalan!"}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok", 
+      message: "API berjalan!",
+      timestamp: new Date().toISOString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
   }
   
-  return ContentService.createTextOutput(JSON.stringify({error: "Invalid action"}))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify({
+    error: "Invalid action",
+    received: action,
+    allParams: e.parameter
+  }))
+  .setMimeType(ContentService.MimeType.JSON);
 }
 
 function getStudentsData() {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("DAFTAR UANG KAS TPLE 004 - SEMESTER 2");
+    var sheet = null;
     
-    if (!sheet) {
-      var sheets = ss.getSheets();
-      for (var i = 0; i < sheets.length; i++) {
-        if (sheets[i].getName().toUpperCase().indexOf("UANG KAS") >= 0) {
-          sheet = sheets[i];
-          break;
-        }
+    var sheets = ss.getSheets();
+    for (var i = 0; i < sheets.length; i++) {
+      var sheetName = sheets[i].getName().toUpperCase();
+      if (sheetName.indexOf("DAFTAR") >= 0 || sheetName.indexOf("UANG KAS") >= 0) {
+        sheet = sheets[i];
+        break;
       }
     }
     
@@ -66,11 +75,14 @@ function getStudentsData() {
       
       for (var colIdx in dateColumns) {
         var date = dateColumns[colIdx];
-        var cellValue = row[colIdx] ? String(row[colIdx]).toLowerCase().trim() : "";
+        var cellValue = row[colIdx];
         
-        var isPaid = ['✓', '✅', '✔', 'true', 'checked', 'v', 'x'].indexOf(cellValue) >= 0;
-        if (!cellValue || ['false', 'unchecked', ''].indexOf(cellValue) >= 0) {
-          isPaid = false;
+        var isPaid = false;
+        
+        if (cellValue === true || cellValue === "TRUE" || cellValue === "true") {
+          isPaid = true;
+        } else if (cellValue === "✓" || cellValue === "✅" || cellValue === "✔") {
+          isPaid = true;
         }
         
         if (isPaid) {
@@ -86,7 +98,6 @@ function getStudentsData() {
         row: rowIdx + 1,
         paid_dates: paidDates.sort(),
         unpaid_dates: unpaidDates.sort(),
-        total_paid: paidDates.length,
         total_unpaid: unpaidDates.length
       });
     }
@@ -101,17 +112,14 @@ function getStudentsData() {
 function getDashboardData() {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = ss.getSheetByName("Dashboard");
+    var sheet = null;
     
-    if (!sheet) {
-      // Coba cari sheet lain
-      var sheets = ss.getSheets();
-      for (var i = 0; i < sheets.length; i++) {
-        if (sheets[i].getName().toUpperCase().indexOf("DASHBOARD") >= 0 || 
-            sheets[i].getName().toUpperCase().indexOf("CASHFLOW") >= 0) {
-          sheet = sheets[i];
-          break;
-        }
+    var sheets = ss.getSheets();
+    for (var i = 0; i < sheets.length; i++) {
+      var sheetName = sheets[i].getName().toUpperCase();
+      if (sheetName.indexOf("DASHBOARD") >= 0) {
+        sheet = sheets[i];
+        break;
       }
     }
     
@@ -138,15 +146,24 @@ function getDashboardData() {
       
       if (rowText.indexOf("total pemasukan") >= 0) {
         result.total_pemasukan = parseRupiah(row);
-      } else if (rowText.indexOf("total pengeluaran") >= 0) {
+      }
+      else if (rowText.indexOf("total pengeluaran") >= 0) {
         result.total_pengeluaran = parseRupiah(row);
-      } else if (rowText.indexOf("sisa uang kas") >= 0 || rowText.indexOf("saldo") >= 0) {
+      }
+      else if (rowText.indexOf("sisa uang kas") >= 0) {
         result.sisa_uang_kas = parseRupiah(row);
-      } else if (rowText.indexOf("status") >= 0) {
+      }
+      else if (rowText.indexOf("status") >= 0) {
         for (var j = 0; j < row.length; j++) {
           var cell = String(row[j]).toLowerCase();
-          if (cell.indexOf("aman") >= 0 || cell.indexOf("warning") >= 0 || cell.indexOf("bahaya") >= 0) {
-            result.status = String(row[j]).toUpperCase();
+          if (cell.indexOf("aman") >= 0) {
+            result.status = "AMAN";
+            break;
+          } else if (cell.indexOf("warning") >= 0) {
+            result.status = "WARNING";
+            break;
+          } else if (cell.indexOf("bahaya") >= 0) {
+            result.status = "BAHAYA";
             break;
           }
         }
@@ -160,7 +177,6 @@ function getDashboardData() {
   }
 }
 
-// Helper Functions
 function isDateColumn(text) {
   var text = String(text).trim();
   return /\d{1,2}\s+[A-Za-z]+\s+\d{4}/.test(text) || /\d{1,2}\/\d{1,2}\/\d{4}/.test(text);
@@ -198,9 +214,10 @@ function parseDateFromHeader(text) {
 
 function parseRupiah(row) {
   for (var i = 0; i < row.length; i++) {
-    var cell = String(row[i]).replace(/[^0-9,-]/g, '').replace(/[.,]/g, '');
-    if (cell) {
-      return parseInt(cell) || 0;
+    var cell = String(row[i]);
+    var cleaned = cell.replace(/[^0-9-]/g, '');
+    if (cleaned && cleaned !== '-') {
+      return parseInt(cleaned) || 0;
     }
   }
   return 0;
