@@ -7,282 +7,292 @@ import aiohttp
 
 logger = logging.getLogger(__name__)
 
+
 class UangKasService:
     """Service untuk mengelola data uang kas dari Google Spreadsheet via Apps Script."""
-    
+
     def __init__(self):
         self.api_url = None
         self._initialized = False
-        self._cache = {}
-        self._cache_duration = 60
-        
+        self._cache: Dict = {}
+        self._cache_duration = 60  # detik
+
+    # INIT & CORE
+
     async def initialize(self) -> bool:
-        """Inisialisasi koneksi ke Google Apps Script API"""
         try:
             api_url = os.getenv("GOOGLE_APPS_SCRIPT_URL")
-            
             if not api_url:
                 logger.error("❌ GOOGLE_APPS_SCRIPT_URL tidak ditemukan")
                 return False
-            
-            self.api_url = api_url.rstrip('/')
-            
-            # Test koneksi
+
+            self.api_url = api_url.rstrip("/")
             async with aiohttp.ClientSession() as session:
-                test_url = f"{self.api_url}?action=test"
-                logger.info(f" Testing API: {test_url}")
-                async with session.get(test_url, timeout=10) as resp:
-                    logger.info(f"📡 Response status: {resp.status}")
+                async with session.get(f"{self.api_url}?action=test", timeout=aiohttp.ClientTimeout(total=10)) as resp:
                     if resp.status == 200:
                         result = await resp.json()
                         logger.info(f"📦 Test result: {result}")
                         self._initialized = True
-                        logger.info("✅ UangKasService initialized (Google Apps Script)")
+                        logger.info("✅ UangKasService initialized")
                         return True
-                    else:
-                        logger.error(f"❌ Apps Script API error: {resp.status}")
-                        return False
-            
+                    logger.error(f"❌ API error: {resp.status}")
+                    return False
         except Exception as e:
-            logger.error(f"❌ Error initializing UangKasService: {e}")
+            logger.error(f"❌ Error initializing: {e}")
             return False
-    
+
     def _get_cached(self, key: str):
         if key in self._cache:
-            data, timestamp = self._cache[key]
-            if datetime.now().timestamp() - timestamp < self._cache_duration:
+            data, ts = self._cache[key]
+            if datetime.now().timestamp() - ts < self._cache_duration:
                 return data
         return None
-    
+
     def _set_cached(self, key: str, data):
         self._cache[key] = (data, datetime.now().timestamp())
-    
-    async def _fetch_api(self, action: str):
-        """Fetch data dari Google Apps Script API"""
+
+    async def _fetch_api(self, action: str, extra_params: str = ""):
         if not self.api_url:
             return None
-        
         try:
-            url = f"{self.api_url}?action={action}"
+            url = f"{self.api_url}?action={action}{extra_params}"
             logger.info(f"🔍 Fetching: {url}")
-            
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=15) as resp:
-                    logger.info(f"📡 Response status: {resp.status}")
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                     if resp.status == 200:
                         result = await resp.json()
-                        logger.info(f"📦 Result: {result}")
                         if result.get("success"):
                             return result.get("data")
-                        else:
-                            logger.error(f"❌ API error: {result}")
+                        logger.error(f"❌ API error: {result}")
                     else:
                         logger.error(f"❌ HTTP error: {resp.status}")
         except Exception as e:
             logger.error(f"❌ Fetch error: {e}")
-        
         return None
-    
-    async def _get_all_students_data(self) -> List[Dict]:
-        """Ambil semua data mahasiswa"""
+
+    # DATA FETCHERS
+
+    async def _get_all_students(self) -> List[Dict]:
         cached = self._get_cached("all_students")
         if cached:
-            logger.info(f"📦 Using cached students data ({len(cached)} students)")
             return cached
-        
         data = await self._fetch_api("getStudents")
         if not data:
-            logger.warning("⚠️ No students data from API")
             return []
-        
         students = data.get("students", [])
-        logger.info(f"✅ Loaded {len(students)} students from API")
+        logger.info(f"✅ Loaded {len(students)} students")
         self._set_cached("all_students", students)
         return students
-    
-    async def _get_dashboard_data(self) -> Dict:
-        """Ambil data dashboard"""
+
+    async def _get_dashboard(self) -> Dict:
         cached = self._get_cached("dashboard")
         if cached:
             return cached
-        
         data = await self._fetch_api("getDashboard")
         if not data:
-            return {
-                'total_pemasukan': 0,
-                'total_pengeluaran': 0,
-                'sisa_uang_kas': 0,
-                'status': 'UNKNOWN'
-            }
-        
+            return {"total_pemasukan": 0, "total_pengeluaran": 0, "sisa_uang_kas": 0, "status": "UNKNOWN"}
         self._set_cached("dashboard", data)
         return data
-    
-    async def get_unpaid_this_week(self) -> List[Dict]:
-        """Dapatkan mahasiswa yang belum bayar untuk minggu ini"""
-        students = await self._get_all_students_data()
-        logger.info(f" Total students: {len(students)}")
-        
-        if not students:
-            return []
-        
-        today = datetime.now()
-        days_since_saturday = (today.weekday() + 2) % 7
-        if days_since_saturday == 0:
-            days_since_saturday = 7
-        last_saturday = today - timedelta(days=days_since_saturday)
-        target_date = last_saturday.strftime("%Y-%m-%d")
-        
-        logger.info(f"📅 Looking for unpaid on: {target_date} (last Saturday)")
-        
-        unpaid_students = []
-        for student in students:
-            unpaid_dates = student.get('unpaid_dates', [])
-            logger.debug(f"  {student['name']}: unpaid_dates = {unpaid_dates}")
-            
-            if target_date in unpaid_dates:
-                unpaid_students.append({
-                    'name': student['name'],
-                    'no': student['no'],
-                    'unpaid_date': target_date
-                })
-        
-        logger.info(f"⚠️ Found {len(unpaid_students)} students unpaid for {target_date}")
-        return unpaid_students
-    
-    async def get_unpaid_last_week(self) -> List[Dict]:
-        """Dapatkan mahasiswa yang belum bayar untuk minggu lalu"""
-        students = await self._get_all_students_data()
-        if not students:
-            return []
-        
-        today = datetime.now()
-        days_since_saturday = (today.weekday() + 2) % 7
-        if days_since_saturday == 0:
-            days_since_saturday = 7
-        last_saturday = today - timedelta(days=days_since_saturday + 7)
-        target_date = last_saturday.strftime("%Y-%m-%d")
-        
-        unpaid_students = []
-        for student in students:
-            if target_date in student.get('unpaid_dates', []):
-                unpaid_students.append({
-                    'name': student['name'],
-                    'no': student['no'],
-                    'unpaid_date': target_date
-                })
-        
-        return unpaid_students
-    
+
+    async def find_student_by_name(self, query: str) -> Optional[Dict]:
+        """Cari satu mahasiswa berdasarkan nama (fuzzy)."""
+        # Coba via endpoint khusus dulu
+        data = await self._fetch_api("getStudent", f"&name={query.replace(' ', '+')}")
+        if data:
+            return data
+
+        # Fallback: cari dari list lokal
+        students = await self._get_all_students()
+        query_lower = query.lower()
+        for s in students:
+            if query_lower in s["name"].lower():
+                return s
+        return None
+
+    # QUERY HELPERS
+
     async def get_all_unpaid_detailed(self) -> List[Dict]:
-        """Dapatkan SEMUA mahasiswa yang belum bayar dengan detail lengkap"""
-        students = await self._get_all_students_data()
-        logger.info(f"📊 Total students for detailed check: {len(students)}")
-        
-        if not students:
-            return []
-        
-        detailed_unpaid = []
-        
-        for student in students:
-            unpaid_dates = student.get('unpaid_dates', [])
-            logger.debug(f"  {student['name']}: {len(unpaid_dates)} unpaid dates")
-            
-            if unpaid_dates:
-                payment_amount = 10000
-                total_owed = len(unpaid_dates) * payment_amount
-                
-                detailed_unpaid.append({
-                    'name': student['name'],
-                    'no': student['no'],
-                    'unpaid_dates': unpaid_dates,
-                    'total_unpaid_count': len(unpaid_dates),
-                    'total_owed': total_owed
+        """Semua mahasiswa yang memiliki setidaknya satu tanggal belum bayar."""
+        students = await self._get_all_students()
+        result = []
+        for s in students:
+            unpaid = s.get("unpaid_dates", [])
+            if unpaid:
+                result.append({
+                    "no": s["no"],
+                    "name": s["name"],
+                    "unpaid_dates": unpaid,
+                    "paid_dates": s.get("paid_dates", []),
+                    "total_unpaid": len(unpaid),
+                    "total_paid": len(s.get("paid_dates", [])),
+                    "total_owed": len(unpaid) * 10_000,
                 })
-        
-        detailed_unpaid.sort(key=lambda x: x['total_unpaid_count'], reverse=True)
-        logger.info(f"⚠️ Found {len(detailed_unpaid)} students with unpaid records")
-        return detailed_unpaid
-    
+        result.sort(key=lambda x: x["total_unpaid"], reverse=True)
+        return result
+
+    async def get_nunggak_summary(self) -> List[Dict]:
+        """Ringkasan tunggakan: total belum bayar per mahasiswa (termasuk yg 0)."""
+        students = await self._get_all_students()
+        result = []
+        for s in students:
+            unpaid_count = len(s.get("unpaid_dates", []))
+            if unpaid_count > 0:
+                result.append({
+                    "no": s["no"],
+                    "name": s["name"],
+                    "total_unpaid": unpaid_count,
+                    "total_owed": unpaid_count * 10_000,
+                })
+        result.sort(key=lambda x: x["total_unpaid"], reverse=True)
+        return result
+
     async def get_current_balance(self) -> Dict:
-        """Dapatkan saldo uang kas saat ini"""
-        dashboard = await self._get_dashboard_data()
+        d = await self._get_dashboard()
         return {
-            'total_pemasukan': dashboard.get('total_pemasukan', 0),
-            'total_pengeluaran': dashboard.get('total_pengeluaran', 0),
-            'sisa_uang_kas': dashboard.get('sisa_uang_kas', 0),
-            'status': dashboard.get('status', 'UNKNOWN')
+            "total_pemasukan": d.get("total_pemasukan", 0),
+            "total_pengeluaran": d.get("total_pengeluaran", 0),
+            "sisa_uang_kas": d.get("sisa_uang_kas", 0),
+            "status": d.get("status", "UNKNOWN"),
         }
-    
+
     async def get_total_expenditure(self) -> int:
-        """Dapatkan total pengeluaran uang kas"""
-        dashboard = await self._get_dashboard_data()
-        return dashboard.get('total_pengeluaran', 0)
-    
+        d = await self._get_dashboard()
+        return d.get("total_pengeluaran", 0)
+
     async def get_total_income(self) -> int:
-        """Dapatkan total pemasukan uang kas"""
-        dashboard = await self._get_dashboard_data()
-        return dashboard.get('total_pemasukan', 0)
-    
-    def format_unpaid_weekly_response(self, unpaid_list: List[Dict], week_label: str) -> str:
-        if not unpaid_list:
-            return f"✅ Tidak ada yang belum bayar uang kas {week_label}!"
-        
-        response = f"⚠️ **DAFTAR BELUM BAYAR UANG KAS {week_label}**\n\n"
-        response += f"Total: **{len(unpaid_list)} mahasiswa**\n\n"
-        
-        for i, student in enumerate(unpaid_list[:20], 1):
-            date_str = student.get('unpaid_date', 'N/A')
-            response += f"{i}. **{student['name']}** (No: {student['no']})\n"
-            response += f"   └ Tanggal: {date_str}\n\n"
-        
-        if len(unpaid_list) > 20:
-            response += f"... dan {len(unpaid_list) - 20} lainnya\n"
-        
-        return response
-    
-    def format_unpaid_detailed_response(self, detailed_list: List[Dict]) -> str:
-        if not detailed_list:
-            return "✅ Tidak ada yang belum bayar uang kas! Semua sudah lunas 🎉"
-        
-        total_owed_all = sum(s['total_owed'] for s in detailed_list)
-        
-        response = f"⚠️ **DAFTAR LENGKAP BELUM BAYAR UANG KAS**\n\n"
-        response += f"Total Mahasiswa: **{len(detailed_list)} orang**\n"
-        response += f"Total Tagihan: **Rp {total_owed_all:,}**\n\n"
-        response += "─" * 50 + "\n\n"
-        
-        for i, student in enumerate(detailed_list[:15], 1):
-            dates_str = ", ".join([d[:10] if isinstance(d, str) else d.strftime('%d/%m') for d in student['unpaid_dates'][:5]])
-            if len(student['unpaid_dates']) > 5:
-                dates_str += f" ... (+{len(student['unpaid_dates']) - 5} lainnya)"
-            
-            response += f"{i}. **{student['name']}** (No: {student['no']})\n"
-            response += f"   └ Belum bayar: {dates_str}\n"
-            response += f"   └ Total: **Rp {student['total_owed']:,}** ({student['total_unpaid_count']}x)\n\n"
-        
-        if len(detailed_list) > 15:
-            response += f"... dan {len(detailed_list) - 15} lainnya\n"
-        
-        return response
-    
-    def format_balance_response(self, balance: Dict) -> str:
-        response = "💰 **STATUS UANG KAS SAAT INI**\n\n"
-        response += f"📥 Total Pemasukan: **Rp {balance['total_pemasukan']:,}**\n"
-        response += f"📤 Total Pengeluaran: **Rp {balance['total_pengeluaran']:,}**\n"
-        response += f"💵 Sisa Uang Kas: **Rp {balance['sisa_uang_kas']:,}**\n\n"
-        
-        status_emoji = {'AMAN': '✅', 'WARNING': '⚠️', 'BAHAYA': '🚨', 'UNKNOWN': '❓'}
-        emoji = status_emoji.get(balance['status'], '❓')
-        response += f"Status: {emoji} **{balance['status']}**"
-        
-        return response
-    
-    def format_expenditure_response(self, expenditure: int) -> str:
-        return f"📤 **TOTAL PENGELUARAN UANG KAS**\n\n**Rp {expenditure:,}**"
-    
-    def format_income_response(self, income: int) -> str:
-        return f"📥 **TOTAL PEMASUKAN UANG KAS**\n\n**Rp {income:,}**"
+        d = await self._get_dashboard()
+        return d.get("total_pemasukan", 0)
+
+    # FORMATTERS
+
+    @staticmethod
+    def _fmt_date(date_str: str) -> str:
+        """yyyy-MM-dd → DD/MM/YYYY"""
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except Exception:
+            return date_str
+
+    def format_all_unpaid(self, detail_list: List[Dict]) -> str:
+        """
+        Format respons 'siapa yang belum bayar uang kas?'
+        Tampilkan semua mahasiswa dengan daftar tanggal belum bayar.
+        """
+        if not detail_list:
+            return "✅ Semua mahasiswa sudah lunas. Tidak ada yang belum bayar! 🎉"
+
+        total_tagihan = sum(s["total_owed"] for s in detail_list)
+        lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "📋  **DAFTAR BELUM BAYAR UANG KAS**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"👥 Total mahasiswa  : **{len(detail_list)} orang**",
+            f"💸 Total tagihan    : **Rp {total_tagihan:,.0f}**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+        ]
+
+        for i, s in enumerate(detail_list, 1):
+            dates_fmt = ", ".join(self._fmt_date(d) for d in s["unpaid_dates"])
+            lines.append(
+                f"**{i}. {s['name']}**\n"
+                f"   └ Belum bayar  : {dates_fmt}\n"
+                f"   └ Jumlah belum : {s['total_unpaid']}x  |  Tagihan: Rp {s['total_owed']:,.0f}"
+            )
+            lines.append("")
+
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        return "\n".join(lines)
+
+    def format_nunggak_summary(self, summary_list: List[Dict]) -> str:
+        """
+        Format respons 'siapa aja yang nunggak uang kas?'
+        Tampilkan total tunggakan masing-masing mahasiswa.
+        """
+        if not summary_list:
+            return "✅ Tidak ada mahasiswa yang nunggak. Semua sudah lunas! 🎉"
+
+        lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "🔴  **REKAP TUNGGAKAN UANG KAS**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"{'No':<4} {'Nama':<30} {'Nunggak':>8} {'Total Hutang':>14}",
+            "─" * 60,
+        ]
+
+        for i, s in enumerate(summary_list, 1):
+            lines.append(
+                f"{i:<4} {s['name']:<30} {s['total_unpaid']:>6}x    Rp {s['total_owed']:>10,.0f}"
+            )
+
+        total_orang  = len(summary_list)
+        total_semua  = sum(s["total_owed"] for s in summary_list)
+        lines += [
+            "─" * 60,
+            f"{'Total':>4} {total_orang} mahasiswa nunggak  |  Total: Rp {total_semua:,.0f}",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ]
+        return "\n".join(lines)
+
+    def format_single_student(self, student: Dict) -> str:
+        """
+        Format respons cek satu mahasiswa: 'Jundulloh apakah sudah bayar?'
+        """
+        name         = student["name"]
+        paid_dates   = student.get("paid_dates", [])
+        unpaid_dates = student.get("unpaid_dates", [])
+        total_paid   = len(paid_dates)
+        total_unpaid = len(unpaid_dates)
+
+        lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"👤  **STATUS UAS KAS — {name}**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ]
+
+        if total_unpaid == 0:
+            lines += [
+                "✅ **LUNAS** — Semua sudah dibayar!",
+                f"   └ Total lunas : {total_paid}x pembayaran",
+            ]
+        else:
+            unpaid_str = ", ".join(self._fmt_date(d) for d in unpaid_dates)
+            paid_str   = (", ".join(self._fmt_date(d) for d in paid_dates)
+                          if paid_dates else "—")
+            lines += [
+                f"⚠️ **BELUM LUNAS** — masih punya tunggakan!",
+                "",
+                f"❌ Belum bayar ({total_unpaid}x):",
+                f"   └ {unpaid_str}",
+                "",
+                f"✅ Sudah bayar ({total_paid}x):",
+                f"   └ {paid_str}",
+                "",
+                f"💸 Total tagihan  : **Rp {total_unpaid * 10_000:,.0f}**",
+            ]
+
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        return "\n".join(lines)
+
+    def format_balance(self, balance: Dict) -> str:
+        status_icon = {"AMAN": "✅", "WARNING": "⚠️", "BAHAYA": "🚨", "UNKNOWN": "❓"}
+        icon = status_icon.get(balance["status"], "❓")
+        return (
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "💰  **STATUS UANG KAS**\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📥 Pemasukan    : **Rp {balance['total_pemasukan']:,.0f}**\n"
+            f"📤 Pengeluaran  : **Rp {balance['total_pengeluaran']:,.0f}**\n"
+            f"💵 Sisa Kas     : **Rp {balance['sisa_uang_kas']:,.0f}**\n"
+            f"🏷️ Status        : {icon} **{balance['status']}**\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+
+    def format_expenditure(self, val: int) -> str:
+        return f"📤 **Total Pengeluaran Uang Kas**\n━━━━━━━━━━━━━━━━━━━━━\n**Rp {val:,.0f}**"
+
+    def format_income(self, val: int) -> str:
+        return f"📥 **Total Pemasukan Uang Kas**\n━━━━━━━━━━━━━━━━━━━━━\n**Rp {val:,.0f}**"
 
 
 uang_kas_service = UangKasService()
