@@ -13,7 +13,7 @@ WIB_TIMEZONE = 7
 class UangKasService:
     """
     Service untuk mengelola data uang kas dari Google Spreadsheet.
-    Menggunakan Google Apps Script API (GRATIS, tanpa Google Cloud).
+    Menggunakan Google Apps Script API.
     """
     
     def __init__(self):
@@ -278,5 +278,4 @@ class UangKasService:
         return f"📥 **TOTAL PEMASUKAN UANG KAS**\n\n**Rp {income:,}**"
 
 
-# Singleton instance
 uang_kas_service = UangKasService()
