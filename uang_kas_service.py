@@ -25,16 +25,17 @@ class UangKasService:
                 logger.error("❌ GOOGLE_APPS_SCRIPT_URL tidak ditemukan")
                 return False
             
-            # Hapus trailing slash
             self.api_url = api_url.rstrip('/')
             
             # Test koneksi
             async with aiohttp.ClientSession() as session:
                 test_url = f"{self.api_url}?action=test"
-                logger.info(f" Testing: {test_url}")
+                logger.info(f" Testing API: {test_url}")
                 async with session.get(test_url, timeout=10) as resp:
                     logger.info(f"📡 Response status: {resp.status}")
                     if resp.status == 200:
+                        result = await resp.json()
+                        logger.info(f"📦 Test result: {result}")
                         self._initialized = True
                         logger.info("✅ UangKasService initialized (Google Apps Script)")
                         return True
@@ -67,7 +68,7 @@ class UangKasService:
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=15) as resp:
-                    logger.info(f"📡 Response: {resp.status}")
+                    logger.info(f"📡 Response status: {resp.status}")
                     if resp.status == 200:
                         result = await resp.json()
                         logger.info(f"📦 Result: {result}")
@@ -83,20 +84,24 @@ class UangKasService:
         return None
     
     async def _get_all_students_data(self) -> List[Dict]:
+        """Ambil semua data mahasiswa"""
         cached = self._get_cached("all_students")
         if cached:
+            logger.info(f"📦 Using cached students data ({len(cached)} students)")
             return cached
         
         data = await self._fetch_api("getStudents")
         if not data:
+            logger.warning("⚠️ No students data from API")
             return []
         
         students = data.get("students", [])
+        logger.info(f"✅ Loaded {len(students)} students from API")
         self._set_cached("all_students", students)
-        logger.info(f"✅ Loaded {len(students)} students")
         return students
     
     async def _get_dashboard_data(self) -> Dict:
+        """Ambil data dashboard"""
         cached = self._get_cached("dashboard")
         if cached:
             return cached
@@ -114,7 +119,10 @@ class UangKasService:
         return data
     
     async def get_unpaid_this_week(self) -> List[Dict]:
+        """Dapatkan mahasiswa yang belum bayar untuk minggu ini"""
         students = await self._get_all_students_data()
+        logger.info(f" Total students: {len(students)}")
+        
         if not students:
             return []
         
@@ -125,18 +133,25 @@ class UangKasService:
         last_saturday = today - timedelta(days=days_since_saturday)
         target_date = last_saturday.strftime("%Y-%m-%d")
         
+        logger.info(f"📅 Looking for unpaid on: {target_date} (last Saturday)")
+        
         unpaid_students = []
         for student in students:
-            if target_date in student.get('unpaid_dates', []):
+            unpaid_dates = student.get('unpaid_dates', [])
+            logger.debug(f"  {student['name']}: unpaid_dates = {unpaid_dates}")
+            
+            if target_date in unpaid_dates:
                 unpaid_students.append({
                     'name': student['name'],
                     'no': student['no'],
                     'unpaid_date': target_date
                 })
         
+        logger.info(f"⚠️ Found {len(unpaid_students)} students unpaid for {target_date}")
         return unpaid_students
     
     async def get_unpaid_last_week(self) -> List[Dict]:
+        """Dapatkan mahasiswa yang belum bayar untuk minggu lalu"""
         students = await self._get_all_students_data()
         if not students:
             return []
@@ -160,7 +175,10 @@ class UangKasService:
         return unpaid_students
     
     async def get_all_unpaid_detailed(self) -> List[Dict]:
+        """Dapatkan SEMUA mahasiswa yang belum bayar dengan detail lengkap"""
         students = await self._get_all_students_data()
+        logger.info(f"📊 Total students for detailed check: {len(students)}")
+        
         if not students:
             return []
         
@@ -168,6 +186,8 @@ class UangKasService:
         
         for student in students:
             unpaid_dates = student.get('unpaid_dates', [])
+            logger.debug(f"  {student['name']}: {len(unpaid_dates)} unpaid dates")
+            
             if unpaid_dates:
                 payment_amount = 10000
                 total_owed = len(unpaid_dates) * payment_amount
@@ -181,9 +201,11 @@ class UangKasService:
                 })
         
         detailed_unpaid.sort(key=lambda x: x['total_unpaid_count'], reverse=True)
+        logger.info(f"⚠️ Found {len(detailed_unpaid)} students with unpaid records")
         return detailed_unpaid
     
     async def get_current_balance(self) -> Dict:
+        """Dapatkan saldo uang kas saat ini"""
         dashboard = await self._get_dashboard_data()
         return {
             'total_pemasukan': dashboard.get('total_pemasukan', 0),
@@ -193,10 +215,12 @@ class UangKasService:
         }
     
     async def get_total_expenditure(self) -> int:
+        """Dapatkan total pengeluaran uang kas"""
         dashboard = await self._get_dashboard_data()
         return dashboard.get('total_pengeluaran', 0)
     
     async def get_total_income(self) -> int:
+        """Dapatkan total pemasukan uang kas"""
         dashboard = await self._get_dashboard_data()
         return dashboard.get('total_pemasukan', 0)
     

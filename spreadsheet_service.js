@@ -1,7 +1,7 @@
 var SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
+
 function doGet(e) {
   var action = e.parameter.action;
-  
   Logger.log("Action received: " + action);
   
   if (action == "getStudents") {
@@ -19,8 +19,7 @@ function doGet(e) {
   
   return ContentService.createTextOutput(JSON.stringify({
     error: "Invalid action",
-    received: action,
-    allParams: e.parameter
+    received: action
   }))
   .setMimeType(ContentService.MimeType.JSON);
 }
@@ -31,10 +30,14 @@ function getStudentsData() {
     var sheet = null;
     
     var sheets = ss.getSheets();
+    Logger.log("Total sheets: " + sheets.length);
+    
     for (var i = 0; i < sheets.length; i++) {
       var sheetName = sheets[i].getName().toUpperCase();
+      Logger.log("Checking sheet: " + sheetName);
       if (sheetName.indexOf("DAFTAR") >= 0 || sheetName.indexOf("UANG KAS") >= 0) {
         sheet = sheets[i];
+        Logger.log("Found sheet: " + sheet.getName());
         break;
       }
     }
@@ -44,10 +47,13 @@ function getStudentsData() {
     }
     
     var data = sheet.getDataRange().getValues();
+    Logger.log("Total rows: " + data.length);
+    
     if (data.length < 4) {
       return errorResponse("Data tidak cukup");
     }
     
+    // Row 3 = header tanggal (index 2)
     var headerRow = data[2];
     var dateColumns = {};
     
@@ -61,8 +67,11 @@ function getStudentsData() {
       }
     }
     
+    Logger.log("Date columns found: " + Object.keys(dateColumns).length);
+    
     var students = [];
     
+    // Mulai row 4 (index 3)
     for (var rowIdx = 3; rowIdx < data.length; rowIdx++) {
       var row = data[rowIdx];
       if (row.length < 2 || !row[1]) continue;
@@ -77,12 +86,17 @@ function getStudentsData() {
         var date = dateColumns[colIdx];
         var cellValue = row[colIdx];
         
+        // Handle checkbox Google Sheets: TRUE = checked, FALSE/empty = unchecked
         var isPaid = false;
         
-        if (cellValue === true || cellValue === "TRUE" || cellValue === "true") {
+        if (cellValue === true) {
           isPaid = true;
+          Logger.log("Checkbox TRUE for " + name + " on " + date);
         } else if (cellValue === "✓" || cellValue === "✅" || cellValue === "✔") {
           isPaid = true;
+        } else if (cellValue === false || cellValue === "" || cellValue === null) {
+          isPaid = false;
+          Logger.log("Checkbox FALSE/empty for " + name + " on " + date);
         }
         
         if (isPaid) {
@@ -98,13 +112,17 @@ function getStudentsData() {
         row: rowIdx + 1,
         paid_dates: paidDates.sort(),
         unpaid_dates: unpaidDates.sort(),
+        total_paid: paidDates.length,
         total_unpaid: unpaidDates.length
       });
     }
     
+    Logger.log("Students processed: " + students.length);
+    
     return successResponse({students: students, count: students.length});
     
   } catch (e) {
+    Logger.log("Error: " + e.toString());
     return errorResponse("Error: " + e.toString());
   }
 }
