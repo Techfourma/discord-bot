@@ -21,7 +21,7 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 try:
-    from ai_bot_service import ai_bot_service
+    from services.ai_bot_service import ai_bot_service
 except ImportError:
     class MockAIBotService:
         async def get_response(self, prompt, user_id, image_bytes=None):
@@ -30,7 +30,7 @@ except ImportError:
     print("🚀 Starting Techfour Bot")
 
 try:
-    from uang_kas_service import uang_kas_service
+    from services.uang_kas_service import uang_kas_service
     UANG_KAS_AVAILABLE = True
 except ImportError:
     UANG_KAS_AVAILABLE = False
@@ -676,82 +676,138 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     await send_jadwal_list(msg.channel, jadwal, header="📚 **JADWAL KULIAH**\n\n")
     return True
 
-# UANG KAS HANDLER
+# HANDLER UANG KAS
 async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
-    """Handler untuk request uang kas."""
+    """
+    Handler uang kas. Skenario:
+      1. Nama spesifik  → format_single_student_response
+      2. "nunggak"      → format_nunggak_summary_response
+      3. Minggu ini/lalu → format_unpaid_weekly_response
+      4. Saldo/pengeluaran/pemasukan
+      5. Default (belum bayar semua) → format_unpaid_detailed_response
+    """
     prompt_lower = user_prompt.lower()
-    
+
     uang_kas_intents = [
         "uang kas", "kas", "belum bayar", "siapa yang belum",
         "tracking belum", "jumlah uang kas", "saldo kas", "sisa kas",
-        "pengeluaran kas", "total pengeluaran", "pemasukan kas"
+        "pengeluaran kas", "total pengeluaran", "pemasukan kas",
+        "nunggak", "tunggak", "bayar kas", "sudah bayar", "udah bayar",
+        "cek kas", "apakah bayar",
     ]
-    
     if not any(intent in prompt_lower for intent in uang_kas_intents):
         return False
-    
+
     if not uang_kas_service._initialized:
         await uang_kas_service.initialize()
         if not uang_kas_service._initialized:
             await msg.channel.send("⚠️ Fitur uang kas belum terkonfigurasi.")
             return True
-    
+
     await msg.channel.typing()
-    
+
     try:
+        name_patterns = [
+            r"apakah\s+(.+?)\s+(?:sudah|udah|udh|blm|belum)\s+bayar",
+            r"(.+?)\s+apakah\s+(?:sudah|udah|udh)\s+bayar",
+            r"(.+?)\s+(?:sudah|udah|udh|blm|belum)\s+bayar\s+(?:uang\s*)?kas",
+            r"cek\s+(.+?)(?:\s+uang\s*kas|\s+kas)?$",
+            r"status\s+(.+?)(?:\s+uang\s*kas|\s+kas)?$",
+        ]
+        skip_words = {"uang", "kas", "siapa", "semua", "yang", "aja", "saja",
+                      "belum", "sudah", "udah", "bayar", "nunggak"}
+        detected_name = None
+        for pattern in name_patterns:
+            m = re.search(pattern, prompt_lower)
+            if m:
+                candidate = m.group(1).strip()
+                tokens = [t for t in candidate.split() if t not in skip_words]
+                candidate = " ".join(tokens)
+                if candidate and len(candidate) > 2:
+                    detected_name = candidate
+                    break
+
+        if detected_name:
+            student = await uang_kas_service.find_student_by_name(detected_name)
+            if student:
+                response = uang_kas_service.format_single_student_response(student)
+            else:
+                response = (
+                    f"❓ Mahasiswa **\"{detected_name}\"** tidak ditemukan.\n"
+                    "Coba tulis nama lebih lengkap."
+                )
+            await send_long_message(msg.channel, response)
+            return True
+
+        if any(kw in prompt_lower for kw in ["nunggak", "tunggak", "rekap"]):
+            detailed_list = await uang_kas_service.get_all_unpaid_detailed()
+            response = uang_kas_service.format_nunggak_summary_response(detailed_list)
+            await send_long_message(msg.channel, response)
+            return True
+
         if "minggu ini" in prompt_lower or "minggu" in prompt_lower:
             today = datetime.now()
-            if today.weekday() == 0:
+            if today.weekday() == 0: 
                 unpaid_list = await uang_kas_service.get_unpaid_last_week()
                 week_label = "MINGGU LALU"
             else:
                 unpaid_list = await uang_kas_service.get_unpaid_this_week()
                 week_label = "MINGGU INI"
-            
             response = uang_kas_service.format_unpaid_weekly_response(unpaid_list, week_label)
-            await msg.channel.send(response[:2000])
+            await send_long_message(msg.channel, response)
             return True
-        
-        elif "minggu depan" in prompt_lower:
-            await msg.channel.send("⏳ Fitur minggu depan akan segera hadir!")
-            return True
-        
-        elif "semua" in prompt_lower or "detail" in prompt_lower or "lengkap" in prompt_lower:
-            detailed_list = await uang_kas_service.get_all_unpaid_detailed()
-            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
-            await msg.channel.send(response[:2000])
-            return True
-        
-        elif any(phrase in prompt_lower for phrase in ["berapa jumlah", "saldo", "sisa"]):
+
+        if any(kw in prompt_lower for kw in ["saldo", "sisa", "berapa jumlah"]):
             if "pengeluaran" in prompt_lower:
-                expenditure = await uang_kas_service.get_total_expenditure()
-                response = uang_kas_service.format_expenditure_response(expenditure)
+                val = await uang_kas_service.get_total_expenditure()
+                await msg.channel.send(uang_kas_service.format_expenditure_response(val))
             elif "pemasukan" in prompt_lower:
-                income = await uang_kas_service.get_total_income()
-                response = uang_kas_service.format_income_response(income)
+                val = await uang_kas_service.get_total_income()
+                await msg.channel.send(uang_kas_service.format_income_response(val))
             else:
                 balance = await uang_kas_service.get_current_balance()
-                response = uang_kas_service.format_balance_response(balance)
-            
-            await msg.channel.send(response[:2000])
+                await msg.channel.send(uang_kas_service.format_balance_response(balance))
             return True
-        
-        elif "pengeluaran" in prompt_lower:
-            expenditure = await uang_kas_service.get_total_expenditure()
-            response = uang_kas_service.format_expenditure_response(expenditure)
-            await msg.channel.send(response[:2000])
+
+        if "pengeluaran" in prompt_lower:
+            val = await uang_kas_service.get_total_expenditure()
+            await msg.channel.send(uang_kas_service.format_expenditure_response(val))
             return True
-        
-        else:
-            detailed_list = await uang_kas_service.get_all_unpaid_detailed()
-            response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
-            await msg.channel.send(response[:2000])
+
+        if "pemasukan" in prompt_lower:
+            val = await uang_kas_service.get_total_income()
+            await msg.channel.send(uang_kas_service.format_income_response(val))
             return True
-            
+
+        detailed_list = await uang_kas_service.get_all_unpaid_detailed()
+        response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
+        await send_long_message(msg.channel, response)
+        return True
+
     except Exception as e:
         logger.error(f"❌ Error handling uang kas request: {e}")
-        await msg.channel.send(f"❌ Terjadi kesalahan: {str(e)[:100]}")
+        await msg.channel.send("❌ Terjadi kesalahan saat mengambil data kas.")
         return True
+
+
+async def send_long_message(channel, text: str, limit: int = 1900):
+    """Kirim pesan panjang dalam beberapa chunk agar tidak melebihi batas Discord."""
+    if len(text) <= limit:
+        await channel.send(text)
+        return
+    parts = []
+    current = ""
+    for line in text.split("\n"):
+        if len(current) + len(line) + 1 > limit:
+            if current:
+                parts.append(current)
+            current = line
+        else:
+            current = (current + "\n" + line) if current else line
+    if current:
+        parts.append(current)
+    for part in parts:
+        await channel.send(part)
 
 # MESSAGE HANDLER
 @bot.event

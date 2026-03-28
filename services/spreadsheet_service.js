@@ -26,7 +26,6 @@ function getStudentsData() {
 
     if (data.length < 4) return errorOut("Data tidak cukup");
 
-    // Row index 2 (baris ke-3) = header tanggal
     var headerRow = data[2];
     var dateColumns = buildDateColumns(headerRow);
 
@@ -36,7 +35,6 @@ function getStudentsData() {
     }
 
     var students = [];
-    // Data mulai baris ke-4 (index 3)
     for (var r = 3; r < data.length; r++) {
       var row  = data[r];
       if (!row[1] || String(row[1]).trim() === "") continue;
@@ -180,6 +178,7 @@ function buildDateColumns(headerRow) {
 }
 
 function parseDateFromHeader(cell) {
+  // Kalau cell adalah Date object dari Sheets
   if (cell instanceof Date) {
     var d = Utilities.formatDate(cell, "Asia/Jakarta", "yyyy-MM-dd");
     Logger.log("Date object: " + d);

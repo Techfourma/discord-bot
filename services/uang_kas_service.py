@@ -124,34 +124,25 @@ class UangKasService:
         self._set_cached("dashboard", data)
         return data
 
-    # ─────────────────────────────────────────────────────────────
-    # FIND STUDENT BY NAME (fuzzy)
-    # ─────────────────────────────────────────────────────────────
-
+    # FIND STUDENT BY NAME 
     async def find_student_by_name(self, query: str) -> Optional[Dict]:
         """Cari satu mahasiswa berdasarkan nama (fuzzy match)."""
         students = await self._get_all_students_data()
         q = query.lower().strip()
 
-        # 1. Exact match
         for s in students:
             if s['name'].lower() == q:
                 return s
-        # 2. Partial: query ada di dalam nama
         for s in students:
             if q in s['name'].lower():
                 return s
-        # 3. Partial: kata pertama query cocok dengan nama
         q_first = q.split()[0] if q.split() else ""
         for s in students:
             if q_first and q_first in s['name'].lower():
                 return s
         return None
 
-    # ─────────────────────────────────────────────────────────────
-    # QUERY METHODS  — nama asli dipertahankan
-    # ─────────────────────────────────────────────────────────────
-    
+    # QUERY METHODS 
     async def get_unpaid_this_week(self) -> List[Dict]:
         """Dapatkan mahasiswa yang belum bayar untuk minggu ini"""
         students = await self._get_all_students_data()
