@@ -59,13 +59,15 @@ discord-bot/
 ├── services/                        # Business Logic Layer
 │   ├── __init__.py
 │   ├── ai_bot_service.py           # Multi-engine AI Service
-│   ├── uang_kas_service.py         # Finance Management Service
+│   ├── uang_kas_service.py         # Finance Management Service  
 │   └── spreadsheet_service.js      # Google Apps Script (Backend)
 │
-├── config/                         # Configuration Files
-│   ├── requirements.txt            # Python Dependencies
-│   └── runtime.txt                 # Python Version (Heroku/Railway)
+├── config/                         # Reference Configuration Files
+│   ├── requirements.txt            # (Reference copy)
+│   └── runtime.txt                 # (Reference copy)
 │
+├── requirements.txt                # 📌 Dependencies (Root - for Deployment)
+├── runtime.txt                     # 📌 Python Version (Root - for Deployment)
 ├── jadwal_kuliah.txt              # Schedule Data (Text Format)
 ├── .env                           # Environment Variables (Git Ignored)
 ├── .gitignore                     # Git Ignore Rules
@@ -73,6 +75,11 @@ discord-bot/
 └── README.md                      # This File
 
 ```
+
+**⚠️ Deployment Notes:**
+- `requirements.txt` & `runtime.txt` **HARUS** di root directory untuk Railway/Heroku
+- Folder `config/` adalah reference copy untuk development
+
 
 ### 📂 Service Breakdown
 
