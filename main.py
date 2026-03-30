@@ -685,6 +685,8 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
       3. Minggu ini/lalu → format_unpaid_weekly_response
       4. Saldo/pengeluaran/pemasukan
       5. Default (belum bayar semua) → format_unpaid_detailed_response
+    
+    Semua hasil hanya menghitung tanggal yang SUDAH LEWAT dari hari ini.
     """
     prompt_lower = user_prompt.lower()
 
@@ -707,15 +709,19 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
     await msg.channel.typing()
 
     try:
+        # Check specific name 
         name_patterns = [
             r"apakah\s+(.+?)\s+(?:sudah|udah|udh|blm|belum)\s+bayar",
             r"(.+?)\s+apakah\s+(?:sudah|udah|udh)\s+bayar",
             r"(.+?)\s+(?:sudah|udah|udh|blm|belum)\s+bayar\s+(?:uang\s*)?kas",
             r"cek\s+(.+?)(?:\s+uang\s*kas|\s+kas)?$",
             r"status\s+(.+?)(?:\s+uang\s*kas|\s+kas)?$",
+            r"mahasiswa\s+dengan\s+nama\s+(.+?)\s+nunggak",
+            r"(.+?)\s+nunggak\s+(?:uang\s*)?kas",
         ]
         skip_words = {"uang", "kas", "siapa", "semua", "yang", "aja", "saja",
-                      "belum", "sudah", "udah", "bayar", "nunggak"}
+                      "belum", "sudah", "udah", "bayar", "nunggak", "mahasiswa",
+                      "dengan", "nama", "berapa", "kali"}
         detected_name = None
         for pattern in name_patterns:
             m = re.search(pattern, prompt_lower)
@@ -739,15 +745,17 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
             await send_long_message(msg.channel, response)
             return True
 
+        # Rekap tunggakan
         if any(kw in prompt_lower for kw in ["nunggak", "tunggak", "rekap"]):
             detailed_list = await uang_kas_service.get_all_unpaid_detailed()
             response = uang_kas_service.format_nunggak_summary_response(detailed_list)
             await send_long_message(msg.channel, response)
             return True
 
+        # Weekly unpaid
         if "minggu ini" in prompt_lower or "minggu" in prompt_lower:
             today = datetime.now()
-            if today.weekday() == 0: 
+            if today.weekday() == 0:
                 unpaid_list = await uang_kas_service.get_unpaid_last_week()
                 week_label = "MINGGU LALU"
             else:
@@ -757,6 +765,7 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
             await send_long_message(msg.channel, response)
             return True
 
+        # Cashflow summary
         if any(kw in prompt_lower for kw in ["saldo", "sisa", "berapa jumlah"]):
             if "pengeluaran" in prompt_lower:
                 val = await uang_kas_service.get_total_expenditure()
@@ -779,6 +788,7 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
             await msg.channel.send(uang_kas_service.format_income_response(val))
             return True
 
+        # Default: list semua yang belum bayar
         detailed_list = await uang_kas_service.get_all_unpaid_detailed()
         response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
         await send_long_message(msg.channel, response)
@@ -791,7 +801,7 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
 
 
 async def send_long_message(channel, text: str, limit: int = 1900):
-    """Kirim pesan panjang dalam beberapa chunk agar tidak melebihi batas Discord."""
+    """Kirim pesan panjang dalam beberapa chunk agar tidak melebihi batas Discord 2000 char."""
     if len(text) <= limit:
         await channel.send(text)
         return
