@@ -186,10 +186,10 @@ E-Learning 30 Maret - 03 April 2026
 - Pendidikan Kewarganegaraan - pertemuan 3 
 
 Tatap Muka Sabtu, 04 April 2026 (Ruang: Viktor, V.111)
-- Komputer Grafik - pertemuan 3
-- Komputer dan Masyarakat - pertemuan 3
-- Sistem Operasi - pertemuan 4
-- Kalkulus II - pertemuan 4
+- Komputer Grafik - pertemuan 3 (07:40 - 09:20)
+- Komputer dan Masyarakat - pertemuan 3 (09.20 - 11.00)
+- Sistem Operasi - pertemuan 4 (11.00 - 13.50)
+- Kalkulus II - pertemuan 4 (13.50 - 15.30)
 --------------------------------------
 
 E-Learning 06 April - 10 April 2026
@@ -202,10 +202,10 @@ E-Learning 06 April - 10 April 2026
 - Kalkulus II - pertemuan 6
 
 Tatap Muka Sabtu, 11 April 2026 (Ruang: Viktor, V.111)
-- Komputer Grafik - pertemuan 4
-- Komputer dan Masyarakat - pertemuan 4
-- Sistem Operasi - pertemuan 5
-- Kalkulus II - pertemuan 5
+- Komputer Grafik - pertemuan 4 (07:40 - 09:20)
+- Komputer dan Masyarakat - pertemuan 4 (09.20 - 11.00)
+- Sistem Operasi - pertemuan 5 (11.00 - 13.50)
+- Kalkulus II - pertemuan 5 (13.50 - 15.30)
 --------------------------------------
 
 E-Learning 13 April - 17 April 2026
@@ -216,10 +216,10 @@ E-Learning 13 April - 17 April 2026
 - Pendidikan Kewarganegaraan - pertemuan 5 
 
 Tatap Muka Sabtu, 18 April 2026 (Ruang: Viktor, V.111)
-- Komputer Grafik - pertemuan 5
-- Komputer dan Masyarakat - pertemuan 5
-- Sistem Operasi (3 SKS) - pertemuan 7
-- Kalkulus II (3 SKS) - pertemuan 7
+- Komputer Grafik - pertemuan 5 (07:40 - 09:20)
+- Komputer dan Masyarakat - pertemuan 5 (09.20 - 11.00)
+- Sistem Operasi (3 SKS) - pertemuan 7 (11.00 - 13.50)
+- Kalkulus II (3 SKS) - pertemuan 7 (13.50 - 15.30)
 --------------------------------------
 
 E-Learning 20 April - 24 April 2026
@@ -232,10 +232,10 @@ E-Learning 20 April - 24 April 2026
 - Kalkulus II - pertemuan 9
 
 Tatap Muka Sabtu, 25 April 2026 (Ruang: Viktor, V.111)
-- Komputer Grafik - pertemuan 6
-- Komputer dan Masyarakat - pertemuan 6
-- Sistem Operasi - pertemuan 8
-- Kalkulus II - pertemuan 8
+- Komputer Grafik - pertemuan 6 (07:40 - 09:20)
+- Komputer dan Masyarakat - pertemuan 6 (09.20 - 11.00)
+- Sistem Operasi - pertemuan 8 (11.00 - 13.50)
+- Kalkulus II - pertemuan 8 (13.50 - 15.30)
 --------------------------------------
 
 E-Learning 27 April - 01 Mei 2026
@@ -246,14 +246,14 @@ E-Learning 27 April - 01 Mei 2026
 - Pendidikan Kewarganegaraan - pertemuan 7 
 
 Tatap Muka Sabtu, 02 Mei 2026 (Ruang: Viktor, V.111)
-- Komputer Grafik - pertemuan 7
-- Komputer dan Masyarakat - pertemuan 7
-- Sistem Operasi (3 SKS) - pertemuan 10
-- Kalkulus II (3 SKS) - pertemuan 10
+- Komputer Grafik - pertemuan 7 (07:40 - 09:20)
+- Komputer dan Masyarakat - pertemuan 7 (09.20 - 11.00)
+- Sistem Operasi (3 SKS) - pertemuan 10 (11.00 - 13.50)
+- Kalkulus II (3 SKS) - pertemuan 10 (13.50 - 15.30)
 - Persiapan UTS dan Kisi-kisi UTS
 -------------------------
 
-=== MINGGU UAS ===
+=== MINGGU UTS ===
 04 Mei - 09 Mei 2026
 E-Learning: 
 - Intermediate Academic English
