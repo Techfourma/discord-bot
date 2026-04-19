@@ -80,6 +80,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+GENERAL_CHANNEL_ID = int(os.getenv("GENERAL_CHANNEL_ID", 0))
 
 # Webhook Logger
 class WebhookLogger:
@@ -528,36 +529,65 @@ def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[in
 
 
 # BACKGROUND TASKS
+def _get_general_channel():
+    """Ambil channel #general berdasarkan GENERAL_CHANNEL_ID, fallback ke system channel."""
+    if GENERAL_CHANNEL_ID:
+        channel = bot.get_channel(GENERAL_CHANNEL_ID)
+        if channel:
+            return channel
+        logger.warning(f"⚠️ GENERAL_CHANNEL_ID={GENERAL_CHANNEL_ID} tidak ditemukan, fallback ke system channel")
+
+    if not bot.guilds:
+        return None
+
+    guild = bot.guilds[0]
+    return guild.system_channel or next(
+        (ch for ch in guild.text_channels if ch.name == "general"), 
+        guild.text_channels[0] if guild.text_channels else None
+    )
+
+
 @tasks.loop(time=dt_time(hour=8, minute=0, tzinfo=WIB))
 async def daily_jadwal_reminder():
     logger.info("🔔 Daily jadwal reminder check")
-    
-    if not bot.guilds:
-        logger.warning("❌ No guilds available")
-        return
-
-    guild = bot.guilds[0]
-    channel = guild.system_channel or guild.text_channels[0]
 
     today = datetime.now(WIB).date()
-    day_of_week = today.weekday()
+    day_of_week = today.weekday()  # Senin=0, Jumat=4
 
-    # Reminder pada Jumat (4) dan Minggu (6)
-    if day_of_week not in [4, 6]:
-        logger.info(f"✅ Not reminder day ({today.strftime('%A')})")
+    # Hanya berjalan pada Senin dan Jumat
+    if day_of_week not in [0, 4]:
+        logger.info(f"✅ Not reminder day ({today.strftime('%A')}), skip")
         return
-    
-    jadwal = get_jadwal_tomorrow()
 
-    if jadwal:
-        response = f"⏰ **Pengingat Jadwal Kuliah Besok ({jadwal['header']}):**\n\n```{jadwal['content']}```"
-        try:
-            await channel.send(response)
-            logger.info("✅ Reminder sent")
-        except Exception as e:
-            logger.error(f"❌ Failed to send reminder: {e}")
-    else:
-        logger.info("✅ No schedule for tomorrow")
+    channel = _get_general_channel()
+    if not channel:
+        logger.warning("❌ No channel available to send reminder")
+        return
+
+    jadwal_list = get_jadwal_this_week()
+
+    if day_of_week == 0:  # Senin: kirim jadwal kuliah minggu ini
+        if jadwal_list:
+            await send_jadwal_list(
+                channel,
+                jadwal_list,
+                header="📅 **JADWAL KULIAH MINGGU INI**\nSelamat memulai pekan baru! Berikut jadwal kuliah minggu ini 👇\n\n"
+            )
+            logger.info("✅ Monday jadwal reminder sent")
+        else:
+            await channel.send("📅 Tidak ada jadwal kuliah untuk minggu ini.")
+            logger.info("✅ Monday: no schedule this week")
+
+    elif day_of_week == 4:  # Jumat: ingatkan kembali jadwal minggu ini
+        if jadwal_list:
+            await send_jadwal_list(
+                channel,
+                jadwal_list,
+                header="⏰ **REMINDER JADWAL KULIAH MINGGU INI**\nJangan lupa, masih ada kegiatan minggu ini 👇\n\n"
+            )
+            logger.info("✅ Friday reminder sent")
+        else:
+            await channel.send("⏰ Tidak ada jadwal kuliah tersisa untuk minggu ini.")
 
 # OCR HANDLER
 async def handle_ocr_attachment(attachment, user_id: int, channel):
