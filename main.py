@@ -8,11 +8,12 @@ except ImportError:
     discord = _Dummy()
     commands = _Dummy()
     tasks = _Dummy()
+
 import logging
 import os
 import time as py_time
 import asyncio
-from datetime import datetime, timedelta, time as dt_time, timezone 
+from datetime import datetime, timedelta, time as dt_time, timezone
 from dotenv import load_dotenv
 import aiohttp
 from typing import Dict, Optional
@@ -27,7 +28,8 @@ except ImportError:
         async def get_response(self, prompt, user_id, image_bytes=None):
             return f"AI Response untuk: {prompt}"
     ai_bot_service = MockAIBotService()
-    print("🚀 Starting Techfour Bot")
+
+print("🚀 Starting Techfour Bot")
 
 try:
     from services.uang_kas_service import uang_kas_service
@@ -48,18 +50,15 @@ class HealthHandler(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
-
+    
     def log_message(self, format, *args):
         pass
 
 def run_health_server():
     import os
-    
     port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
-    
     print(f"🌐 Health server running on port {port}")
-    
     try:
         server.serve_forever()
     except Exception as e:
@@ -87,12 +86,12 @@ class WebhookLogger:
     def __init__(self, webhook_url: Optional[str]):
         self.webhook_url = webhook_url
         self.session = None
-
+    
     async def get_session(self):
         if self.session is None:
             self.session = aiohttp.ClientSession()
         return self.session
-
+    
     async def send_log(self, content: str):
         if not self.webhook_url:
             return
@@ -139,7 +138,7 @@ class TechfourBot(commands.Bot):
     async def on_ready(self):
         print(f'🎉 {self.user} is now ONLINE!')
         print(f'📊 Connected to {len(self.guilds)} guilds')
-
+        
         # Set status bot
         await self.change_presence(
             activity=discord.Activity(
@@ -147,7 +146,7 @@ class TechfourBot(commands.Bot):
                 name="!help | Mentions"
             )
         )
-
+        
         # Start background tasks
         try:
             daily_jadwal_reminder.start()
@@ -155,15 +154,15 @@ class TechfourBot(commands.Bot):
             print("✅ Background tasks started")
         except Exception as e:
             print(f"⚠️ Error starting tasks: {e}")
-
+        
         logger.info(f"Bot {self.user} fully operational")
-
+    
     async def on_connect(self):
         print("🔗 Connected to Discord gateway")
-
+    
     async def on_disconnect(self):
         print("🔌 Disconnected from Discord gateway")
-
+    
     async def on_error(self, event, *args, **kwargs):
         logger.error(f"Error in event {event}: {args}")
 
@@ -176,35 +175,35 @@ class RateLimiter:
         self.user_daily_usage: Dict[int, int] = {}
         self.last_reset_time: float = py_time.time()
         self.DAILY_RESET_INTERVAL = 24 * 60 * 60
-
+    
     def check_reset(self):
         now = py_time.time()
         if now - self.last_reset_time >= self.DAILY_RESET_INTERVAL:
             self.user_daily_usage.clear()
             self.last_reset_time = now
             logger.info("🔄 Daily usage reset")
-
+    
     def get_daily_limit(self, is_admin: bool) -> int:
         return 20 if is_admin else 10
-
+    
     async def can_use_ai(self, user_id: int, is_admin: bool):
         self.check_reset()
         now = py_time.time()
-
+        
         # Cooldown check
         if user_id in self.user_cooldowns:
             diff = now - self.user_cooldowns[user_id]
             if diff < 10:
                 return False, f"⏳ Tunggu {int(10-diff)} detik sebelum menggunakan AI lagi."
-
+        
         # Daily limit check
         used = self.user_daily_usage.get(user_id, 0)
         limit = self.get_daily_limit(is_admin)
         if used >= limit:
             return False, f"🚫 Limit harian {used}/{limit} tercapai. Reset dalam 24 jam."
-
+        
         return True, None
-
+    
     async def record(self, user_id: int):
         self.user_cooldowns[user_id] = py_time.time()
         self.user_daily_usage[user_id] = self.user_daily_usage.get(user_id, 0) + 1
@@ -215,7 +214,7 @@ rate_limiter = RateLimiter()
 class ActivityTracker:
     def __init__(self):
         self.last_activity = {}
-
+    
     def update_activity(self, uid: int):
         self.last_activity[uid] = datetime.now()
 
@@ -230,40 +229,38 @@ def is_admin(member: discord.Member) -> bool:
 # JADWAL KULIAH
 WIB = timezone(timedelta(hours=7))
 
-
 # Helper: Format header
 def format_jadwal_entry(jadwal):
     header = jadwal['header']
     content = jadwal['content']
-    # Pisahkan blok Tatap Muka jika ada di dalam content
-    if header.lower().startswith('e-learning'):
-        # Cek apakah ada baris "Tatap muka ..." di content
+    
+    if header.lower().startswith('e-learning '):
         lines = content.split('\n')
         tatap_idx = next((i for i, l in enumerate(lines) if l.lower().startswith('tatap muka')), None)
         if tatap_idx is not None:
-            # Pisahkan bagian e-learning dan tatap muka
             e_learning_part = '\n'.join(lines[:tatap_idx]).strip()
             tatap_header = lines[tatap_idx].strip()
             tatap_content = '\n'.join(lines[tatap_idx+1:]).strip()
-            result = f"**{header}**\n"
+            result = f"__**{header}**__\n"
             if e_learning_part:
-                result += f"```{e_learning_part}```\n"
-            result += f"**{tatap_header}**\n"
+                result += f"`{e_learning_part}`\n"
+            result += f"\n__**{tatap_header}**__\n"
             if tatap_content:
-                result += f"```{tatap_content}```\n"
+                result += f"`{tatap_content}`\n"
             return result
         else:
-            return f"**{header}**\n```{content}```\n"
+            return f"__**{header}**__\n`{content}`\n"
     elif header.lower().startswith('tatap muka'):
-        return f"**{header}**\n```{content}```\n"
+        return f"__**{header}**__\n`{content}`\n"
     else:
-        return f"**{header}**\n```{content}```\n"
+        return f"__**{header}**__\n`{content}`\n"
 
 # Helper: Sending jadwal list
 async def send_jadwal_list(channel, jadwal_list, header: str = ""):
     if not jadwal_list:
         await channel.send("📚 Tidak ada jadwal.")
         return
+    
     msg = header
     for j in jadwal_list:
         entry = format_jadwal_entry(j)
@@ -271,13 +268,12 @@ async def send_jadwal_list(channel, jadwal_list, header: str = ""):
             await channel.send(msg)
             msg = ""
         msg += entry
+    
     if msg:
         await channel.send(msg)
 
-
 def parse_jadwal_file():
     """Membaca dan memecah file jadwal, lalu mengeluarkan daftar entry.
-
     Setiap entry sekarang juga menyimpan tanggal awal/akhir yang diparsing
     sehingga pencarian berdasarkan bulan atau tanggal menjadi mudah.
     """
@@ -292,16 +288,16 @@ def parse_jadwal_file():
             section = section.strip()
             if not section:
                 continue
-                
+            
             lines = section.split('\n', 1)
             if len(lines) < 2:
                 continue
-                
+            
             header = lines[0].strip()
             content_text = lines[1].strip()
-
+            
             start_date, end_date = parse_date_from_header(header)
-
+            
             jadwal_list.append({
                 "header": header,
                 "content": content_text,
@@ -329,12 +325,12 @@ def parse_date_from_header(header: str):
             'july': 7, 'august': 8, 'october': 10, 'december': 12
         }
         
-        # Pattern: "DD Month - DD Month YYYY"
+        # Pattern:  "DD Month - DD Month YYYY "
         date_pattern = r'(\d{1,2})\s+([A-Za-z]+)\s*-\s*(\d{1,2})\s+([A-Za-z]+)'
         match = re.search(date_pattern, header)
         
         if match:
-            start_day = int(match.group(1))
+            start_day = int(match.group(1)) 
             start_month = month_map.get(match.group(2).lower(), 1)
             end_day = int(match.group(3))
             end_month = month_map.get(match.group(4).lower(), 1)
@@ -347,7 +343,7 @@ def parse_date_from_header(header: str):
             
             return start_date, end_date
         
-        # Pattern with day name: "DD Month - DayName"
+        # Pattern with day name:  "DD Month - DayName "
         if " - " in header:
             parts = header.split(" - ", 1)
             start_match = re.search(r'(\d{1,2})\s+([A-Za-z]+)', parts[0])
@@ -381,11 +377,10 @@ def parse_date_from_header(header: str):
 
 def get_jadwal_for_date(target_date):
     jadwal_list = parse_jadwal_file()
-    
     for jadwal in jadwal_list:
         if jadwal['header'] == 'Error':
             continue
-            
+        
         start_date, end_date = parse_date_from_header(jadwal['header'])
         
         if start_date and end_date and start_date <= target_date <= end_date:
@@ -404,7 +399,6 @@ def get_current_jadwal():
 def get_jadwal_range(start_offset: int, end_offset: int):
     jadwal_list = parse_jadwal_file()
     result = []
-    
     today = datetime.now(WIB).date()
     start = today + timedelta(days=start_offset)
     end = today + timedelta(days=end_offset)
@@ -412,7 +406,7 @@ def get_jadwal_range(start_offset: int, end_offset: int):
     for jadwal in jadwal_list:
         if jadwal['header'] == 'Error':
             continue
-            
+        
         s_date, e_date = parse_date_from_header(jadwal['header'])
         if s_date and e_date and s_date <= end and e_date >= start:
             result.append(jadwal)
@@ -439,10 +433,8 @@ def get_jadwal_this_week():
 def get_jadwal_next_week():
     return get_jadwal_range(7, 13)
 
-
 def find_jadwal_by_month(month: int, year: Optional[int] = None):
     """Cari semua entry jadwal yang mencakup bulan (dan tahun) tertentu.
-
     Ditujukan untuk mendukung kueri "jadwal bulan maret" bahkan jika sudah
     lampau. Fungsi akan mengembalikan daftar entry yang mempunyai rentang
     tanggal di bulan tersebut. (Iterasi harian sederhana untuk menangani
@@ -450,7 +442,7 @@ def find_jadwal_by_month(month: int, year: Optional[int] = None):
     """
     jadwal_list = parse_jadwal_file()
     result = []
-
+    
     for jadwal in jadwal_list:
         if jadwal.get('header') == 'Error':
             continue
@@ -458,23 +450,21 @@ def find_jadwal_by_month(month: int, year: Optional[int] = None):
         e_date = jadwal.get('end_date')
         if not s_date or not e_date:
             continue
-
+        
         if year and s_date.year != year and e_date.year != year:
             continue
-
+        
         d = s_date
         while d <= e_date:
             if d.month == month and (not year or d.year == year):
                 result.append(jadwal)
                 break
             d += timedelta(days=1)
-
+    
     return result
-
 
 def parse_date_from_prompt(prompt: str) -> Optional[datetime.date]:
     """Deteksi tanggal spesifik (DD Month [YYYY]) dari string.
-
     Contoh teks yang didukung:
       - "5 maret"
       - "tanggal 12 april 2025"
@@ -488,29 +478,27 @@ def parse_date_from_prompt(prompt: str) -> Optional[datetime.date]:
         'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     }
-
+    
     # Search for number + month name + optional year
     match = re.search(r"(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?", prompt)
     if not match:
         return None
-
+    
     day = int(match.group(1))
     month_str = match.group(2).lower()
     month = month_map.get(month_str)
     year = int(match.group(3)) if match.group(3) else datetime.now(WIB).year
-
+    
     if not month:
         return None
-
+    
     try:
         return datetime(year, month, day).date()
     except ValueError:
         return None
 
-
 def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[int]]]:
     """Ekstrak nama bulan (dan opsional tahun) dari teks.
-
     Mengembalikan pasangan (bulan, tahun) atau None jika tidak ada bulan.
     """
     month_map = {
@@ -519,7 +507,7 @@ def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[in
         'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     }
-
+    
     for name, num in month_map.items():
         if re.search(r"\b" + re.escape(name) + r"\b", prompt.lower()):
             year_match = re.search(r"(\d{4})", prompt)
@@ -527,66 +515,77 @@ def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[in
             return num, year
     return None
 
-
-#UTS/UAS HELPER FUNCTIONS
 def _is_uts_uas_entry(jadwal: dict) -> tuple[bool, str]:
     """
-    Cek apakah entry jadwal merupakan UTS atau UAS.
+    Cek apakah entry jadwal merupakan UTS atau UAS yang SEBENARNYA.
     Mengembalikan (True/False, tipe: 'UTS'|'UAS'|'').
-    Deteksi berdasarkan header atau konten yang mengandung kata 'UTS' / 'UAS'.
+    
+    PERBAIKAN: Hanya deteksi sebagai UTS/UAS jika header mengandung "=== UTS ===" 
+    atau "=== UAS ===", BUKAN dari konten yang mengandung "Persiapan UTS/UAS".
     """
-    header  = jadwal.get('header', '')
-    content = jadwal.get('content', '')
-    combined = (header + ' ' + content).upper()
-
-    if re.search(r'\bUAS\b', combined):
+    header = jadwal.get('header', '').upper()
+    
+    # Cek header yang mengandung === UTS === atau === UAS ===
+    if '=== UAS ===' in header or header.strip() == 'UAS':
         return True, 'UAS'
-    if re.search(r'\bUTS\b', combined):
+    if '=== UTS ===' in header or header.strip() == 'UTS':
         return True, 'UTS'
+    
     return False, ''
-
 
 def find_upcoming_uts_uas(exam_type: str) -> Optional[dict]:
     """
-    Cari entry UTS atau UAS yang paling dekat dengan tanggal hari ini
-    (start_date >= today). Jika tidak ada yang akan datang, ambil yang
-    paling terakhir (masa lampau) sebagai fallback.
-
+    Cari entry UTS atau UAS yang SEBENARNYA (bukan persiapan).
+    Mengambil dari section yang ditandai dengan "=== UTS ===" atau "=== UAS ===".
+    
     :param exam_type: 'UTS' atau 'UAS' (case-insensitive)
     :return: dict entry jadwal atau None
     """
     exam_type = exam_type.upper()
     jadwal_list = parse_jadwal_file()
     today = datetime.now(WIB).date()
-
+    
     upcoming = []
-    past     = []
-
+    past = []
+    
     for jadwal in jadwal_list:
         if jadwal.get('header') == 'Error':
             continue
+        
         is_exam, detected_type = _is_uts_uas_entry(jadwal)
         if not is_exam or detected_type != exam_type:
             continue
-
+        
         s_date = jadwal.get('start_date')
         e_date = jadwal.get('end_date')
+        
+        if not s_date:
+            content_lines = jadwal.get('content', '').split('\n')
+            for line in content_lines:
+                start_date, end_date = parse_date_from_header(line.strip())
+                if start_date:
+                    s_date = start_date
+                    e_date = end_date
+                    # Update jadwal dengan tanggal yang ditemukan
+                    jadwal['start_date'] = s_date
+                    jadwal['end_date'] = e_date
+                    break
+        
         if not s_date:
             continue
-
+        
         if s_date >= today:
             upcoming.append(jadwal)
         else:
             past.append(jadwal)
-
+    
     if upcoming:
         return min(upcoming, key=lambda j: j['start_date'])
-
+    
     if past:
         return max(past, key=lambda j: j['start_date'])
-
+    
     return None
-
 
 def get_jadwal_next_week_with_exam():
     """
@@ -596,27 +595,30 @@ def get_jadwal_next_week_with_exam():
     """
     return get_jadwal_range(7, 13)
 
-
 def _format_exam_entry(jadwal: dict, exam_type: str) -> str:
     """Format pesan khusus untuk entry UTS/UAS."""
-    header  = jadwal.get('header', '')
+    header = jadwal.get('header', '')
     content = jadwal.get('content', '')
-    s_date  = jadwal.get('start_date')
-    e_date  = jadwal.get('end_date')
-
+    s_date = jadwal.get('start_date')
+    e_date = jadwal.get('end_date')
+    
     emoji = '📝' if exam_type == 'UTS' else '🎓'
-
+    
     date_str = ''
     if s_date and e_date:
         date_str = f"{s_date.strftime('%d %B %Y')} – {e_date.strftime('%d %B %Y')}"
     elif s_date:
         date_str = s_date.strftime('%d %B %Y')
-
+    
     msg = f"{emoji} **JADWAL {exam_type}**\n"
     if date_str:
         msg += f"📅 Tanggal: **{date_str}**\n"
-    msg += f"**{header}**\n```{content}```"
+    msg += f"\n{content}"
+    
     return msg
+
+
+# Reminder UTS/UAS
 
 @tasks.loop(time=dt_time(hour=8, minute=5, tzinfo=WIB))
 async def uts_uas_reminder():
@@ -625,49 +627,46 @@ async def uts_uas_reminder():
     Berjalan setiap hari Senin pukul 08:05 WIB.
     """
     today = datetime.now(WIB).date()
-
-    if today.weekday() != 0:
+    if today.weekday() != 0:  # Hanya Senin
         return
-
+    
     logger.info("🔔 UTS/UAS reminder check")
-
+    
     channel = _get_general_channel()
     if not channel:
         logger.warning("❌ No channel available for UTS/UAS reminder")
         return
-
+    
     jadwal_list = parse_jadwal_file()
     reminder_window_start = today + timedelta(days=1)
-    reminder_window_end   = today + timedelta(days=14)
-
+    reminder_window_end = today + timedelta(days=14)
+    
     for exam_label, emoji in [('UTS', '📝'), ('UAS', '🎓')]:
         for jadwal in jadwal_list:
             if jadwal.get('header') == 'Error':
                 continue
-
+            
             is_exam, detected_type = _is_uts_uas_entry(jadwal)
             if not is_exam or detected_type != exam_label:
                 continue
-
+            
             s_date = jadwal.get('start_date')
             if not s_date:
                 continue
-
-            # Kirim reminder jika start_date jatuh dalam 14 hari ke depan
+            
             if reminder_window_start <= s_date <= reminder_window_end:
                 days_left = (s_date - today).days
-                header  = jadwal.get('header', '')
+                header = jadwal.get('header', '')
                 content = jadwal.get('content', '')
-
+                
                 msg = (
                     f"{emoji} **REMINDER {exam_label} — {days_left} HARI LAGI!**\n"
                     f"Halo semuanya! {exam_label} sudah semakin dekat. "
                     f"Yuk mulai persiapkan diri dari sekarang! 💪\n\n"
-                    f"**{header}**\n```{content}```"
+                    f"📅 **{s_date.strftime('%d %B %Y')}**\n```{content}```"
                 )
                 await channel.send(msg[:2000])
                 logger.info(f"✅ {exam_label} reminder sent ({days_left} days left)")
-
 
 # BACKGROUND TASKS
 def _get_general_channel():
@@ -677,36 +676,34 @@ def _get_general_channel():
         if channel:
             return channel
         logger.warning(f"⚠️ GENERAL_CHANNEL_ID={GENERAL_CHANNEL_ID} tidak ditemukan, fallback ke system channel")
-
+    
     if not bot.guilds:
         return None
-
+    
     guild = bot.guilds[0]
     return guild.system_channel or next(
         (ch for ch in guild.text_channels if ch.name == "general"), 
         guild.text_channels[0] if guild.text_channels else None
     )
 
-
 @tasks.loop(time=dt_time(hour=8, minute=0, tzinfo=WIB))
 async def daily_jadwal_reminder():
     logger.info("🔔 Daily jadwal reminder check")
-
     today = datetime.now(WIB).date()
     day_of_week = today.weekday() 
-
-    if day_of_week not in [0, 4]:
+    
+    if day_of_week not in [0, 4]:  
         logger.info(f"✅ Not reminder day ({today.strftime('%A')}), skip")
         return
-
+    
     channel = _get_general_channel()
     if not channel:
         logger.warning("❌ No channel available to send reminder")
         return
-
+    
     jadwal_list = get_jadwal_this_week()
-
-    if day_of_week == 0:
+    
+    if day_of_week == 0:  
         if jadwal_list:
             await send_jadwal_list(
                 channel,
@@ -717,8 +714,8 @@ async def daily_jadwal_reminder():
         else:
             await channel.send("📅 Tidak ada jadwal kuliah untuk minggu ini.")
             logger.info("✅ Monday: no schedule this week")
-
-    elif day_of_week == 4:  # Jumat: ingatkan kembali jadwal minggu ini
+    
+    elif day_of_week == 4: 
         if jadwal_list:
             await send_jadwal_list(
                 channel,
@@ -735,7 +732,7 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
         if attachment.size > 5_000_000:
             await channel.send("❌ File terlalu besar (max 5MB).")
             return
-
+        
         headers = {"Authorization": f"Bot {DISCORD_TOKEN}"}
         async with aiohttp.ClientSession() as session:
             async with session.get(attachment.url, headers=headers, timeout=15) as resp:
@@ -743,7 +740,7 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
                     await channel.send(f"❌ Gagal download gambar. Status: {resp.status}")
                     return
                 image_bytes = await resp.read()
-
+        
         await channel.typing()
         ocr_result = await ai_bot_service.get_response(
             "Tolong ekstrak semua teks yang terlihat di gambar ini.",
@@ -752,7 +749,7 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
         )
         await channel.send(f"📄 **Hasil OCR:**\n{ocr_result[:1900]}")
         logger.info("✅ OCR completed")
-
+    
     except Exception as e:
         logger.error(f"❌ OCR error: {e}")
         await channel.send("❌ Gagal memproses gambar.")
@@ -760,10 +757,9 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
 # JADWAL COMMAND HANDLER
 async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     prompt_lower = user_prompt.lower()
-
     uts_keywords = ["uts", "ujian tengah semester", "mid exam", "mid-term"]
     uas_keywords = ["uas", "ujian akhir semester", "final exam"]
-
+    
     if any(kw in prompt_lower for kw in uts_keywords) and \
        not any(kw in prompt_lower for kw in uas_keywords):
         # Request jadwal UTS
@@ -773,7 +769,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         else:
             await msg.channel.send("📝 Tidak ada data jadwal UTS ditemukan.")
         return True
-
+    
     if any(kw in prompt_lower for kw in uas_keywords):
         # Request jadwal UAS
         jadwal = find_upcoming_uts_uas('UAS')
@@ -782,18 +778,17 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         else:
             await msg.channel.send("🎓 Tidak ada data jadwal UAS ditemukan.")
         return True
-
-    #Detect General intent
+    
+    # Detect General intent
     jadwal_intents = [
-        "jadwal","mata kuliah", "cek jadwal", "lihat jadwal", "info jadwal",
+        "jadwal", "mata kuliah", "cek jadwal", "lihat jadwal", "info jadwal",
         "jadwal kuliah", "jadwal uas", "jadwal elearning",
         "jadwal minggu", "jadwal hari", "kapan kuliah", "uas kapan"
     ]
-
+    
     if not any(intent in prompt_lower for intent in jadwal_intents):
         return False
-
-
+    
     # Relative date handling
     now = datetime.now(WIB)
     if "bulan depan" in prompt_lower:
@@ -804,6 +799,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         header = f"📚 **JADWAL BULAN {month_name} {next_year}**\n\n"
         await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
+    
     if "minggu depan" in prompt_lower:
         jadwal_list = get_jadwal_next_week_with_exam()
         if not jadwal_list:
@@ -814,10 +810,10 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
                 is_exam, etype = _is_uts_uas_entry(j)
                 if is_exam:
                     exam_notes.append(etype)
-
+            
             header = "📚 **JADWAL MINGGU DEPAN**\n\n"
             if exam_notes:
-                unique_exams = list(dict.fromkeys(exam_notes)) 
+                unique_exams = list(dict.fromkeys(exam_notes))
                 exams_str = " & ".join(unique_exams)
                 header = (
                     f"📚 **JADWAL MINGGU DEPAN**\n"
@@ -825,10 +821,12 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
                 )
             await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
+    
     if "minggu ini" in prompt_lower:
         jadwal_list = get_jadwal_this_week()
         await send_jadwal_list(msg.channel, jadwal_list, header="📚 **JADWAL MINGGU INI**\n\n")
         return True
+    
     if "besok" in prompt_lower:
         jadwal = get_jadwal_tomorrow()
         if jadwal:
@@ -842,6 +840,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         else:
             await msg.channel.send("📚 Tidak ada jadwal untuk besok.")
         return True
+    
     if "hari ini" in prompt_lower or "sekarang" in prompt_lower:
         jadwal = get_current_jadwal()
         if jadwal:
@@ -855,8 +854,8 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         else:
             await msg.channel.send("📚 Tidak ada jadwal untuk hari ini.")
         return True
-
-    #check (dd bulan [yyyy])
+    
+    # Check (dd bulan [yyyy])
     specific_date = parse_date_from_prompt(user_prompt)
     if specific_date:
         jadwal = get_jadwal_for_date(specific_date)
@@ -870,13 +869,11 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
                     f"**{jadwal['header']}**\n```{jadwal['content']}```"
                 )
         else:
-            resp = (
-                f"📚 Tidak ada jadwal untuk tanggal {specific_date.strftime('%d %B %Y')}.")
+            resp = f"📚 Tidak ada jadwal untuk tanggal {specific_date.strftime('%d %B %Y')}."
         await msg.channel.send(resp[:2000])
         return True
-
-
-    #cek month
+    
+    # Check month
     month_info = parse_month_year_from_prompt(user_prompt)
     if month_info:
         month_num, year = month_info
@@ -887,13 +884,13 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         header = f"📚 **JADWAL BULAN {month_name} {year}**\n\n"
         await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
-
-    #fallback
+    
+    # Fallback
     jadwal = get_jadwal_this_week()
     if not jadwal:
         await msg.channel.send("📚 Tidak ada jadwal.")
         return True
-
+    
     await send_jadwal_list(msg.channel, jadwal, header="📚 **JADWAL KULIAH**\n\n")
     return True
 
@@ -901,16 +898,15 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
 async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
     """
     Handler uang kas. Skenario:
-      1. Nama spesifik  → format_single_student_response
-      2. "nunggak"      → format_nunggak_summary_response
-      3. Minggu ini/lalu → format_unpaid_weekly_response
-      4. Saldo/pengeluaran/pemasukan
-      5. Default (belum bayar semua) → format_unpaid_detailed_response
-    
+    1. Nama spesifik  → format_single_student_response
+    2. "nunggak"      → format_nunggak_summary_response
+    3. Minggu ini/lalu → format_unpaid_weekly_response
+    4. Saldo/pengeluaran/pemasukan
+    5. Default (belum bayar semua) → format_unpaid_detailed_response
     Semua hasil hanya menghitung tanggal yang SUDAH LEWAT dari hari ini.
     """
     prompt_lower = user_prompt.lower()
-
+    
     uang_kas_intents = [
         "uang kas", "kas", "belum bayar", "siapa yang belum",
         "tracking belum", "jumlah uang kas", "saldo kas", "sisa kas",
@@ -920,15 +916,15 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
     ]
     if not any(intent in prompt_lower for intent in uang_kas_intents):
         return False
-
+    
     if not uang_kas_service._initialized:
         await uang_kas_service.initialize()
         if not uang_kas_service._initialized:
             await msg.channel.send("⚠️ Fitur uang kas belum terkonfigurasi.")
             return True
-
+    
     await msg.channel.typing()
-
+    
     try:
         # Check specific name 
         name_patterns = [
@@ -941,8 +937,8 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
             r"(.+?)\s+nunggak\s+(?:uang\s*)?kas",
         ]
         skip_words = {"uang", "kas", "siapa", "semua", "yang", "aja", "saja",
-                      "belum", "sudah", "udah", "bayar", "nunggak", "mahasiswa",
-                      "dengan", "nama", "berapa", "kali"}
+                     "belum", "sudah", "udah", "bayar", "nunggak", "mahasiswa",
+                     "dengan", "nama", "berapa", "kali"}
         detected_name = None
         for pattern in name_patterns:
             m = re.search(pattern, prompt_lower)
@@ -953,7 +949,7 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
                 if candidate and len(candidate) > 2:
                     detected_name = candidate
                     break
-
+        
         if detected_name:
             student = await uang_kas_service.find_student_by_name(detected_name)
             if student:
@@ -965,14 +961,14 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
                 )
             await send_long_message(msg.channel, response)
             return True
-
+        
         # Rekap tunggakan
         if any(kw in prompt_lower for kw in ["nunggak", "tunggak", "rekap"]):
             detailed_list = await uang_kas_service.get_all_unpaid_detailed()
             response = uang_kas_service.format_nunggak_summary_response(detailed_list)
             await send_long_message(msg.channel, response)
             return True
-
+        
         # Weekly unpaid
         if "minggu ini" in prompt_lower or "minggu" in prompt_lower:
             today = datetime.now()
@@ -985,7 +981,7 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
             response = uang_kas_service.format_unpaid_weekly_response(unpaid_list, week_label)
             await send_long_message(msg.channel, response)
             return True
-
+        
         # Cashflow summary
         if any(kw in prompt_lower for kw in ["saldo", "sisa", "berapa jumlah"]):
             if "pengeluaran" in prompt_lower:
@@ -998,34 +994,34 @@ async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
                 balance = await uang_kas_service.get_current_balance()
                 await msg.channel.send(uang_kas_service.format_balance_response(balance))
             return True
-
+        
         if "pengeluaran" in prompt_lower:
             val = await uang_kas_service.get_total_expenditure()
             await msg.channel.send(uang_kas_service.format_expenditure_response(val))
             return True
-
+        
         if "pemasukan" in prompt_lower:
             val = await uang_kas_service.get_total_income()
             await msg.channel.send(uang_kas_service.format_income_response(val))
             return True
-
+        
         # Default: list semua yang belum bayar
         detailed_list = await uang_kas_service.get_all_unpaid_detailed()
         response = uang_kas_service.format_unpaid_detailed_response(detailed_list)
         await send_long_message(msg.channel, response)
         return True
-
+    
     except Exception as e:
         logger.error(f"❌ Error handling uang kas request: {e}")
         await msg.channel.send("❌ Terjadi kesalahan saat mengambil data kas.")
         return True
-
 
 async def send_long_message(channel, text: str, limit: int = 1900):
     """Kirim pesan panjang dalam beberapa chunk agar tidak melebihi batas Discord 2000 char."""
     if len(text) <= limit:
         await channel.send(text)
         return
+    
     parts = []
     current = ""
     for line in text.split("\n"):
@@ -1035,8 +1031,10 @@ async def send_long_message(channel, text: str, limit: int = 1900):
             current = line
         else:
             current = (current + "\n" + line) if current else line
+    
     if current:
         parts.append(current)
+    
     for part in parts:
         await channel.send(part)
 
@@ -1045,12 +1043,12 @@ async def send_long_message(channel, text: str, limit: int = 1900):
 async def on_message(msg):
     if msg.author == bot.user:
         return
-
+    
     activity_tracker.update_activity(msg.author.id)
-
+    
     # Toxic word filter
     toxic_words = ["kontol", "memek", "bangsat", "ngentod", "jembut", "anjing",
-                   "brengsek", "tai", "tolol", "babi", "goblok", "ngewe"]
+                  "brengsek", "tai", "tolol", "babi", "goblok", "ngewe"]
     if any(word in msg.content.lower() for word in toxic_words):
         try:
             await msg.delete()
@@ -1058,18 +1056,18 @@ async def on_message(msg):
         except Exception as e:
             logger.error(f"❌ Delete message error: {e}")
         return
-
+    
     # Handler untuk mention bot
     if bot.user.mentioned_in(msg) and not msg.mention_everyone:
         user_prompt = msg.content.replace(f"<@{bot.user.id}>", "").replace(f"<@!{bot.user.id}>", "").strip()
-
+        
         # Handler OCR - priority
         if msg.attachments:
             for attachment in msg.attachments:
                 if attachment.filename.lower().endswith((".png", ".jpg", ".jpeg", ".pdf")):
                     await handle_ocr_attachment(attachment, msg.author.id, msg.channel)
                     return
-
+        
         # Priority 2: Jadwal
         if await handle_jadwal_request(msg, user_prompt):
             return
@@ -1077,29 +1075,29 @@ async def on_message(msg):
         # Priority 3: Uang Kas
         if await handle_uang_kas_request(msg, user_prompt):
             return
-
+        
         # Priority 4: AI
         if not user_prompt:
             await msg.channel.send("Halo! Ada yang bisa kubantu?")
             return
-
+        
         admin = is_admin(msg.author)
         can_use, error_msg = await rate_limiter.can_use_ai(msg.author.id, admin)
         
         if not can_use:
             await msg.channel.send(error_msg)
             return
-
+        
         await msg.channel.typing()
         await rate_limiter.record(msg.author.id)
         
         reply = await ai_bot_service.get_response(user_prompt, msg.author.id, image_bytes=None)
         await msg.channel.send(reply[:2000])
         return
-
+    
     await bot.process_commands(msg)
 
-#Run bot error handling
+# Run bot error handling
 if __name__ == "__main__":
     if not DISCORD_TOKEN:
         print("❌ No DISCORD_TOKEN, running health server only")
@@ -1112,7 +1110,7 @@ if __name__ == "__main__":
         print("🤖 Starting Discord bot...")
         max_retries = 3
         retry_count = 0
-
+        
         while retry_count < max_retries:
             try:
                 bot.run(DISCORD_TOKEN)
@@ -1129,6 +1127,6 @@ if __name__ == "__main__":
                 break
             else:
                 break
-
+        
         if retry_count >= max_retries:
             print("❌ Failed to connect after retries")
