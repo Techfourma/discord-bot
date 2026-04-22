@@ -151,6 +151,7 @@ class TechfourBot(commands.Bot):
         # Start background tasks
         try:
             daily_jadwal_reminder.start()
+            uts_uas_reminder.start() 
             print("✅ Background tasks started")
         except Exception as e:
             print(f"⚠️ Error starting tasks: {e}")
@@ -519,13 +520,153 @@ def parse_month_year_from_prompt(prompt: str) -> Optional[tuple[int, Optional[in
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     }
 
-    # Search for month name in the prompt
     for name, num in month_map.items():
         if re.search(r"\b" + re.escape(name) + r"\b", prompt.lower()):
             year_match = re.search(r"(\d{4})", prompt)
             year = int(year_match.group(1)) if year_match else datetime.now(WIB).year
             return num, year
     return None
+
+
+#UTS/UAS HELPER FUNCTIONS
+def _is_uts_uas_entry(jadwal: dict) -> tuple[bool, str]:
+    """
+    Cek apakah entry jadwal merupakan UTS atau UAS.
+    Mengembalikan (True/False, tipe: 'UTS'|'UAS'|'').
+    Deteksi berdasarkan header atau konten yang mengandung kata 'UTS' / 'UAS'.
+    """
+    header  = jadwal.get('header', '')
+    content = jadwal.get('content', '')
+    combined = (header + ' ' + content).upper()
+
+    if re.search(r'\bUAS\b', combined):
+        return True, 'UAS'
+    if re.search(r'\bUTS\b', combined):
+        return True, 'UTS'
+    return False, ''
+
+
+def find_upcoming_uts_uas(exam_type: str) -> Optional[dict]:
+    """
+    Cari entry UTS atau UAS yang paling dekat dengan tanggal hari ini
+    (start_date >= today). Jika tidak ada yang akan datang, ambil yang
+    paling terakhir (masa lampau) sebagai fallback.
+
+    :param exam_type: 'UTS' atau 'UAS' (case-insensitive)
+    :return: dict entry jadwal atau None
+    """
+    exam_type = exam_type.upper()
+    jadwal_list = parse_jadwal_file()
+    today = datetime.now(WIB).date()
+
+    upcoming = []
+    past     = []
+
+    for jadwal in jadwal_list:
+        if jadwal.get('header') == 'Error':
+            continue
+        is_exam, detected_type = _is_uts_uas_entry(jadwal)
+        if not is_exam or detected_type != exam_type:
+            continue
+
+        s_date = jadwal.get('start_date')
+        e_date = jadwal.get('end_date')
+        if not s_date:
+            continue
+
+        if s_date >= today:
+            upcoming.append(jadwal)
+        else:
+            past.append(jadwal)
+
+    if upcoming:
+        return min(upcoming, key=lambda j: j['start_date'])
+
+    if past:
+        return max(past, key=lambda j: j['start_date'])
+
+    return None
+
+
+def get_jadwal_next_week_with_exam():
+    """
+    Sama seperti get_jadwal_next_week() tetapi TIDAK membuang entry UTS/UAS.
+    Digunakan khusus untuk request 'jadwal minggu depan' agar UTS/UAS
+    ikut ditampilkan jika memang jatuh pada minggu depan.
+    """
+    return get_jadwal_range(7, 13)
+
+
+def _format_exam_entry(jadwal: dict, exam_type: str) -> str:
+    """Format pesan khusus untuk entry UTS/UAS."""
+    header  = jadwal.get('header', '')
+    content = jadwal.get('content', '')
+    s_date  = jadwal.get('start_date')
+    e_date  = jadwal.get('end_date')
+
+    emoji = '📝' if exam_type == 'UTS' else '🎓'
+
+    date_str = ''
+    if s_date and e_date:
+        date_str = f"{s_date.strftime('%d %B %Y')} – {e_date.strftime('%d %B %Y')}"
+    elif s_date:
+        date_str = s_date.strftime('%d %B %Y')
+
+    msg = f"{emoji} **JADWAL {exam_type}**\n"
+    if date_str:
+        msg += f"📅 Tanggal: **{date_str}**\n"
+    msg += f"**{header}**\n```{content}```"
+    return msg
+
+@tasks.loop(time=dt_time(hour=8, minute=5, tzinfo=WIB))
+async def uts_uas_reminder():
+    """
+    Background task: kirim reminder 2 minggu sebelum UTS/UAS.
+    Berjalan setiap hari Senin pukul 08:05 WIB.
+    """
+    today = datetime.now(WIB).date()
+
+    if today.weekday() != 0:
+        return
+
+    logger.info("🔔 UTS/UAS reminder check")
+
+    channel = _get_general_channel()
+    if not channel:
+        logger.warning("❌ No channel available for UTS/UAS reminder")
+        return
+
+    jadwal_list = parse_jadwal_file()
+    reminder_window_start = today + timedelta(days=1)
+    reminder_window_end   = today + timedelta(days=14)
+
+    for exam_label, emoji in [('UTS', '📝'), ('UAS', '🎓')]:
+        for jadwal in jadwal_list:
+            if jadwal.get('header') == 'Error':
+                continue
+
+            is_exam, detected_type = _is_uts_uas_entry(jadwal)
+            if not is_exam or detected_type != exam_label:
+                continue
+
+            s_date = jadwal.get('start_date')
+            if not s_date:
+                continue
+
+            # Kirim reminder jika start_date jatuh dalam 14 hari ke depan
+            if reminder_window_start <= s_date <= reminder_window_end:
+                days_left = (s_date - today).days
+                header  = jadwal.get('header', '')
+                content = jadwal.get('content', '')
+
+                msg = (
+                    f"{emoji} **REMINDER {exam_label} — {days_left} HARI LAGI!**\n"
+                    f"Halo semuanya! {exam_label} sudah semakin dekat. "
+                    f"Yuk mulai persiapkan diri dari sekarang! 💪\n\n"
+                    f"**{header}**\n```{content}```"
+                )
+                await channel.send(msg[:2000])
+                logger.info(f"✅ {exam_label} reminder sent ({days_left} days left)")
 
 
 # BACKGROUND TASKS
@@ -552,9 +693,8 @@ async def daily_jadwal_reminder():
     logger.info("🔔 Daily jadwal reminder check")
 
     today = datetime.now(WIB).date()
-    day_of_week = today.weekday()  # Senin=0, Jumat=4
+    day_of_week = today.weekday() 
 
-    # Hanya berjalan pada Senin dan Jumat
     if day_of_week not in [0, 4]:
         logger.info(f"✅ Not reminder day ({today.strftime('%A')}), skip")
         return
@@ -566,7 +706,7 @@ async def daily_jadwal_reminder():
 
     jadwal_list = get_jadwal_this_week()
 
-    if day_of_week == 0:  # Senin: kirim jadwal kuliah minggu ini
+    if day_of_week == 0:
         if jadwal_list:
             await send_jadwal_list(
                 channel,
@@ -621,6 +761,28 @@ async def handle_ocr_attachment(attachment, user_id: int, channel):
 async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     prompt_lower = user_prompt.lower()
 
+    uts_keywords = ["uts", "ujian tengah semester", "mid exam", "mid-term"]
+    uas_keywords = ["uas", "ujian akhir semester", "final exam"]
+
+    if any(kw in prompt_lower for kw in uts_keywords) and \
+       not any(kw in prompt_lower for kw in uas_keywords):
+        # Request jadwal UTS
+        jadwal = find_upcoming_uts_uas('UTS')
+        if jadwal:
+            await msg.channel.send(_format_exam_entry(jadwal, 'UTS')[:2000])
+        else:
+            await msg.channel.send("📝 Tidak ada data jadwal UTS ditemukan.")
+        return True
+
+    if any(kw in prompt_lower for kw in uas_keywords):
+        # Request jadwal UAS
+        jadwal = find_upcoming_uts_uas('UAS')
+        if jadwal:
+            await msg.channel.send(_format_exam_entry(jadwal, 'UAS')[:2000])
+        else:
+            await msg.channel.send("🎓 Tidak ada data jadwal UAS ditemukan.")
+        return True
+
     #Detect General intent
     jadwal_intents = [
         "jadwal","mata kuliah", "cek jadwal", "lihat jadwal", "info jadwal",
@@ -643,8 +805,25 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
     if "minggu depan" in prompt_lower:
-        jadwal_list = get_jadwal_next_week()
-        await send_jadwal_list(msg.channel, jadwal_list, header="📚 **JADWAL MINGGU DEPAN**\n\n")
+        jadwal_list = get_jadwal_next_week_with_exam()
+        if not jadwal_list:
+            await msg.channel.send("📚 Tidak ada jadwal untuk minggu depan.")
+        else:
+            exam_notes = []
+            for j in jadwal_list:
+                is_exam, etype = _is_uts_uas_entry(j)
+                if is_exam:
+                    exam_notes.append(etype)
+
+            header = "📚 **JADWAL MINGGU DEPAN**\n\n"
+            if exam_notes:
+                unique_exams = list(dict.fromkeys(exam_notes)) 
+                exams_str = " & ".join(unique_exams)
+                header = (
+                    f"📚 **JADWAL MINGGU DEPAN**\n"
+                    f"⚠️ Minggu depan ada **{exams_str}** — siapkan dirimu! 💪\n\n"
+                )
+            await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
     if "minggu ini" in prompt_lower:
         jadwal_list = get_jadwal_this_week()
@@ -653,31 +832,43 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     if "besok" in prompt_lower:
         jadwal = get_jadwal_tomorrow()
         if jadwal:
-            await msg.channel.send(
-                f"📚 **JADWAL UNTUK BESOK ({jadwal['header']})**\n\n```{jadwal['content']}```"
-            )
+            is_exam, etype = _is_uts_uas_entry(jadwal)
+            if is_exam:
+                await msg.channel.send(_format_exam_entry(jadwal, etype)[:2000])
+            else:
+                await msg.channel.send(
+                    f"📚 **JADWAL UNTUK BESOK ({jadwal['header']})**\n\n```{jadwal['content']}```"
+                )
         else:
             await msg.channel.send("📚 Tidak ada jadwal untuk besok.")
         return True
     if "hari ini" in prompt_lower or "sekarang" in prompt_lower:
         jadwal = get_current_jadwal()
         if jadwal:
-            await msg.channel.send(
-                f"📚 **JADWAL UNTUK HARI INI ({jadwal['header']})**\n\n```{jadwal['content']}```"
-            )
+            is_exam, etype = _is_uts_uas_entry(jadwal)
+            if is_exam:
+                await msg.channel.send(_format_exam_entry(jadwal, etype)[:2000])
+            else:
+                await msg.channel.send(
+                    f"📚 **JADWAL UNTUK HARI INI ({jadwal['header']})**\n\n```{jadwal['content']}```"
+                )
         else:
             await msg.channel.send("📚 Tidak ada jadwal untuk hari ini.")
         return True
 
-    # 1. check (dd bulan [yyyy])
+    #check (dd bulan [yyyy])
     specific_date = parse_date_from_prompt(user_prompt)
     if specific_date:
         jadwal = get_jadwal_for_date(specific_date)
         if jadwal:
-            resp = (
-                f"📚 **JADWAL UNTUK {specific_date.strftime('%d %B %Y')}**\n\n"
-                f"**{jadwal['header']}**\n```{jadwal['content']}```"
-            )
+            is_exam, etype = _is_uts_uas_entry(jadwal)
+            if is_exam:
+                resp = _format_exam_entry(jadwal, etype)
+            else:
+                resp = (
+                    f"📚 **JADWAL UNTUK {specific_date.strftime('%d %B %Y')}**\n\n"
+                    f"**{jadwal['header']}**\n```{jadwal['content']}```"
+                )
         else:
             resp = (
                 f"📚 Tidak ada jadwal untuk tanggal {specific_date.strftime('%d %B %Y')}.")
@@ -685,7 +876,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         return True
 
 
-    # 2. cek month
+    #cek month
     month_info = parse_month_year_from_prompt(user_prompt)
     if month_info:
         month_num, year = month_info
@@ -697,7 +888,7 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
         await send_jadwal_list(msg.channel, jadwal_list, header=header)
         return True
 
-    # 3. fallback
+    #fallback
     jadwal = get_jadwal_this_week()
     if not jadwal:
         await msg.channel.send("📚 Tidak ada jadwal.")
