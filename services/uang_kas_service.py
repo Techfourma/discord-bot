@@ -155,7 +155,6 @@ class UangKasService:
         return None
 
     # QUERY METHODS
-    
     async def get_unpaid_this_week(self) -> List[Dict]:
         """Dapatkan mahasiswa yang belum bayar untuk minggu ini (sabtu terakhir)"""
         students = await self._get_all_students_data()
@@ -260,8 +259,24 @@ class UangKasService:
         dashboard = await self._get_dashboard_data()
         return dashboard.get('total_pemasukan', 0)
 
+    async def get_pengeluaran_list(self) -> List[Dict]:
+        """Ambil semua data pengeluaran dari sheet 'Pengeluaran'."""
+        cached = self._get_cached("pengeluaran_list")
+        if cached:
+            logger.info(f"📦 Using cached pengeluaran data ({len(cached)} items)")
+            return cached
+
+        data = await self._fetch_api("getPengeluaran")
+        if not data:
+            logger.warning("⚠️ No pengeluaran data from API")
+            return []
+
+        items = data.get("pengeluaran", [])
+        logger.info(f"✅ Loaded {len(items)} pengeluaran items from API")
+        self._set_cached("pengeluaran_list", items)
+        return items
+
     # FORMAT METHODS
-    
     def format_unpaid_weekly_response(self, unpaid_list: List[Dict], week_label: str) -> str:
         if not unpaid_list:
             return f"✅ Tidak ada yang belum bayar uang kas {week_label}!"
@@ -389,6 +404,48 @@ class UangKasService:
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             f"👥 {len(detailed_list)} mahasiswa nunggak",
             f"💸 Total semua: **Rp {total_tagihan:,.0f}**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ]
+        return "\n".join(lines)
+
+    def format_pengeluaran_list_response(self, items: List[Dict]) -> str:
+        """Format daftar pengeluaran dari sheet 'Pengeluaran'."""
+        if not items:
+            return (
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "🛒 **DAFTAR PENGELUARAN KELAS**\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ Belum ada data pengeluaran.\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+
+        today = datetime.now().date()
+        total = sum(item.get("harga", 0) for item in items)
+
+        lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "🛒 **DAFTAR PENGELUARAN KELAS**",
+            f"📅 Per tanggal: {today.strftime('%d/%m/%Y')}",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+        ]
+
+        for i, item in enumerate(items, 1):
+            tanggal   = item.get("tanggal", "-")
+            pembelian = item.get("pembelian", "-")
+            kategori  = item.get("kategori", "-")
+            harga     = item.get("harga", 0)
+
+            lines.append(f"**{i}. {pembelian}**")
+            lines.append(f"   └ 📅 Tanggal  : {tanggal}")
+            lines.append(f"   └ 🏷️ Kategori : {kategori}")
+            lines.append(f"   └ 💸 Harga    : **Rp {harga:,.0f}**")
+            lines.append("")
+
+        lines += [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"🧾 Total {len(items)} item pengeluaran",
+            f"💰 **Total Keseluruhan : Rp {total:,.0f}**",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
         ]
         return "\n".join(lines)
