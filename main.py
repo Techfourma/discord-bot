@@ -894,6 +894,48 @@ async def handle_jadwal_request(msg, user_prompt: str) -> bool:
     await send_jadwal_list(msg.channel, jadwal, header="📚 **JADWAL KULIAH**\n\n")
     return True
 
+# HANDLER PENGELUARAN KELAS
+async def handle_pengeluaran_request(msg, user_prompt: str) -> bool:
+    """
+    Handler pengeluaran kelas. Menampilkan semua baris dari sheet 'Pengeluaran'
+    ketika user bertanya tentang detail pengeluaran/pembelian kelas.
+    Diprioritaskan sebelum handle_uang_kas_request agar tidak ditangkap oleh
+    intent "pengeluaran" generik di handler kas.
+    """
+    prompt_lower = user_prompt.lower()
+
+    pengeluaran_intents = [
+        "pengeluaran kelas", "dipakai apa", "dipakai buat apa",
+        "daftar pengeluaran", "list pengeluaran", "pengeluaran apa saja",
+        "pengeluaran apa", "beli apa saja", "beli apa", "pembelian kelas",
+        "uang dipakai", "kas dipakai", "pengeluaran kas kelas",
+        "dibeliin apa", "dibelikan apa", "kas buat apa",
+    ]
+    if not any(intent in prompt_lower for intent in pengeluaran_intents):
+        return False
+
+    if not UANG_KAS_AVAILABLE or uang_kas_service is None:
+        await msg.channel.send("⚠️ Fitur uang kas tidak tersedia.")
+        return True
+
+    if not uang_kas_service._initialized:
+        await uang_kas_service.initialize()
+        if not uang_kas_service._initialized:
+            await msg.channel.send("⚠️ Fitur uang kas belum terkonfigurasi.")
+            return True
+
+    await msg.channel.typing()
+
+    try:
+        items = await uang_kas_service.get_pengeluaran_list()
+        response = uang_kas_service.format_pengeluaran_list_response(items)
+        await send_long_message(msg.channel, response)
+        return True
+    except Exception as e:
+        logger.error(f"❌ Error handling pengeluaran request: {e}")
+        await msg.channel.send("❌ Terjadi kesalahan saat mengambil data pengeluaran.")
+        return True
+
 # HANDLER UANG KAS
 async def handle_uang_kas_request(msg, user_prompt: str) -> bool:
     """
@@ -1072,11 +1114,15 @@ async def on_message(msg):
         if await handle_jadwal_request(msg, user_prompt):
             return
         
-        # Priority 3: Uang Kas
+        # Priority 3: Pengeluaran Kelas
+        if await handle_pengeluaran_request(msg, user_prompt):
+            return
+        
+        # Priority 4: Uang Kas
         if await handle_uang_kas_request(msg, user_prompt):
             return
         
-        # Priority 4: AI
+        # Priority 5: AI
         if not user_prompt:
             await msg.channel.send("Halo! Ada yang bisa kubantu?")
             return

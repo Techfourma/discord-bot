@@ -1,13 +1,13 @@
 var SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
-
 function doGet(e) {
   var action = e.parameter.action;
   var name   = e.parameter.name || "";
   Logger.log("=== ACTION: " + action + " | NAME: " + name + " ===");
 
-  if (action === "getStudents")   return getStudentsData();
-  if (action === "getDashboard")  return getDashboardData();
-  if (action === "getStudent")    return getSingleStudentData(name);
+  if (action === "getStudents")    return getStudentsData();
+  if (action === "getDashboard")   return getDashboardData();
+  if (action === "getStudent")     return getSingleStudentData(name);
+  if (action === "getPengeluaran") return getPengeluaranData();   // ← BARU
   if (action === "test") {
     return jsonOut({ status: "ok", message: "API berjalan!", timestamp: new Date().toISOString() });
   }
@@ -15,7 +15,9 @@ function doGet(e) {
   return jsonOut({ error: "Invalid action", received: action });
 }
 
+// ─────────────────────────────────────────────────────────────
 // GET ALL STUDENTS
+// ─────────────────────────────────────────────────────────────
 function getStudentsData() {
   try {
     var sheet = getSheet("DaftarUangKas") || getSheet("DaftarUangkas") || findSheetByKeyword(["DAFTAR", "UANG KAS"]);
@@ -26,6 +28,7 @@ function getStudentsData() {
 
     if (data.length < 4) return errorOut("Data tidak cukup");
 
+    // Row index 2 (baris ke-3) = header tanggal
     var headerRow = data[2];
     var dateColumns = buildDateColumns(headerRow);
 
@@ -35,6 +38,7 @@ function getStudentsData() {
     }
 
     var students = [];
+    // Data mulai baris ke-4 (index 3)
     for (var r = 3; r < data.length; r++) {
       var row  = data[r];
       if (!row[1] || String(row[1]).trim() === "") continue;
@@ -121,6 +125,92 @@ function getSingleStudentData(queryName) {
   }
 }
 
+// GET PENGELUARAN
+function getPengeluaranData() {
+  try {
+    var sheet = getSheet("Pengeluaran") || findSheetByKeyword(["PENGELUARAN"]);
+    if (!sheet) return errorOut("Sheet 'Pengeluaran' tidak ditemukan");
+
+    var data = sheet.getDataRange().getValues();
+    Logger.log("Pengeluaran rows: " + data.length);
+
+    var headerRowIdx = -1;
+    for (var i = 0; i < data.length; i++) {
+      var firstCell = String(data[i][0]).trim().toLowerCase();
+      if (firstCell === "tanggal") {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) headerRowIdx = 1;
+
+    Logger.log("Header row index: " + headerRowIdx);
+
+    // Mapping header
+    var headerRow = data[headerRowIdx];
+    var colMap = {};
+    for (var j = 0; j < headerRow.length; j++) {
+      var h = String(headerRow[j]).trim().toLowerCase();
+      if (h === "tanggal")   colMap.tanggal   = j;
+      if (h === "nama pic")  colMap.nama_pic  = j;
+      if (h === "pembelian") colMap.pembelian = j;
+      if (h === "kategori")  colMap.kategori  = j;
+      if (h === "harga")     colMap.harga     = j;
+      if (h === "lampiran")  colMap.lampiran  = j;
+      if (h === "deskripsi") colMap.deskripsi = j;
+    }
+    Logger.log("Column map: " + JSON.stringify(colMap));
+
+    var pengeluaran = [];
+
+    for (var r = headerRowIdx + 1; r < data.length; r++) {
+      var row = data[r];
+
+      var pembelianVal = colMap.pembelian !== undefined ? String(row[colMap.pembelian]).trim() : "";
+      var tanggalVal   = colMap.tanggal   !== undefined ? row[colMap.tanggal] : "";
+      if (!pembelianVal && !tanggalVal) continue;
+
+      // Format tanggal
+      var tanggalStr = "";
+      if (tanggalVal) {
+        if (tanggalVal instanceof Date) {
+          tanggalStr = Utilities.formatDate(tanggalVal, "Asia/Jakarta", "EEEE, dd MMMM yyyy");
+        } else {
+          tanggalStr = String(tanggalVal).trim();
+        }
+      }
+
+      // Parse harga
+      var hargaRaw  = colMap.harga !== undefined ? row[colMap.harga] : 0;
+      var hargaNum  = 0;
+      if (typeof hargaRaw === "number") {
+        hargaNum = hargaRaw;
+      } else {
+        var cleaned = String(hargaRaw).replace(/[^0-9]/g, "");
+        hargaNum = cleaned ? parseInt(cleaned) : 0;
+      }
+
+      pengeluaran.push({
+        tanggal  : tanggalStr,
+        nama_pic : colMap.nama_pic  !== undefined ? String(row[colMap.nama_pic]).trim()  : "",
+        pembelian: colMap.pembelian !== undefined ? String(row[colMap.pembelian]).trim() : "",
+        kategori : colMap.kategori  !== undefined ? String(row[colMap.kategori]).trim()  : "",
+        harga    : hargaNum,
+        lampiran : colMap.lampiran  !== undefined ? String(row[colMap.lampiran]).trim()  : "",
+        deskripsi: colMap.deskripsi !== undefined ? String(row[colMap.deskripsi]).trim() : "",
+      });
+    }
+
+    Logger.log("Pengeluaran items: " + pengeluaran.length);
+    return successOut({ pengeluaran: pengeluaran, count: pengeluaran.length });
+
+  } catch (err) {
+    Logger.log("ERROR getPengeluaran: " + err);
+    return errorOut("Error: " + err.toString());
+  }
+}
+
 // DASHBOARD
 function getDashboardData() {
   try {
@@ -154,6 +244,8 @@ function getDashboardData() {
 }
 
 // HELPERS
+
+/** Cek cell checkbox*/
 function isCellChecked(cell) {
   if (cell === true)  return true;
   if (cell === false) return false;
@@ -178,7 +270,6 @@ function buildDateColumns(headerRow) {
 }
 
 function parseDateFromHeader(cell) {
-  // Kalau cell adalah Date object dari Sheets
   if (cell instanceof Date) {
     var d = Utilities.formatDate(cell, "Asia/Jakarta", "yyyy-MM-dd");
     Logger.log("Date object: " + d);
