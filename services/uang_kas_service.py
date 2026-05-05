@@ -276,6 +276,75 @@ class UangKasService:
         self._set_cached("pengeluaran_list", items)
         return items
 
+    # SHAREHOLDERS
+    async def get_shareholders(self) -> Dict:
+        """Ambil data shareholders/pemegang uang kas dari sheet Dashboard."""
+        cached = self._get_cached("shareholders")
+        if cached:
+            logger.info(f"📦 Using cached shareholders data")
+            return cached
+
+        data = await self._fetch_api("getShareholders")
+        if not data:
+            logger.warning("⚠️ No shareholders data from API")
+            return {'shareholders': [], 'total_funds': 0, 'count': 0}
+
+        logger.info(f"✅ Loaded {data.get('count', 0)} shareholders from API")
+        self._set_cached("shareholders", data)
+        return data
+
+    def format_shareholders_response(self, data: Dict) -> str:
+        """
+        Format daftar pemegang uang kas (shareholders) dengan tampilan rapih.
+        Menampilkan nama, dana yang dipegang, dan persentasenya.
+        """
+        shareholders = data.get('shareholders', [])
+        total_funds  = data.get('total_funds', 0)
+
+        if not shareholders:
+            return (
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "👥 **PEMEGANG UANG KAS KELAS**\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ Belum ada data pemegang uang kas.\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            )
+
+        today = datetime.now().date()
+
+        lines = [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "👥 **PEMEGANG UANG KAS KELAS**",
+            f"📅 Per tanggal: {today.strftime('%d/%m/%Y')}",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            "",
+        ]
+
+        for i, sh in enumerate(shareholders, 1):
+            name    = sh.get('name', '-')
+            funds   = sh.get('funds', 0)
+            percent = sh.get('percent', 0.0)
+
+            # Bar visual sederhana berdasarkan persentase
+            bar_filled = int(round(percent / 10))  # max 10 blok untuk 100%
+            bar_empty  = 10 - bar_filled
+            bar        = "█" * bar_filled + "░" * bar_empty
+
+            lines.append(f"**{i}. {name}**")
+            lines.append(f"   └ 💵 Dana    : **Rp {funds:,.0f}**")
+            lines.append(f"   └ 📊 Porsi   : **{percent:.2f}%**")
+            lines.append(f"   └ {bar} {percent:.2f}%")
+            lines.append("")
+
+        lines += [
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"👥 Total pemegang  : **{len(shareholders)} orang**",
+            f"💰 Total dana      : **Rp {total_funds:,.0f}**",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        ]
+
+        return "\n".join(lines)
+
     # FORMAT METHODS
     def format_unpaid_weekly_response(self, unpaid_list: List[Dict], week_label: str) -> str:
         if not unpaid_list:

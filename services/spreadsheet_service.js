@@ -1,13 +1,13 @@
-var SPREADSHEET_ID = "YOUR_SPREADSHEET_ID_HERE";
 function doGet(e) {
   var action = e.parameter.action;
   var name   = e.parameter.name || "";
   Logger.log("=== ACTION: " + action + " | NAME: " + name + " ===");
 
-  if (action === "getStudents")    return getStudentsData();
-  if (action === "getDashboard")   return getDashboardData();
-  if (action === "getStudent")     return getSingleStudentData(name);
-  if (action === "getPengeluaran") return getPengeluaranData();   // ← BARU
+  if (action === "getStudents")      return getStudentsData();
+  if (action === "getDashboard")     return getDashboardData();
+  if (action === "getStudent")       return getSingleStudentData(name);
+  if (action === "getPengeluaran")   return getPengeluaranData();
+  if (action === "getShareholders")  return getShareholdersData(); // ← BARU
   if (action === "test") {
     return jsonOut({ status: "ok", message: "API berjalan!", timestamp: new Date().toISOString() });
   }
@@ -125,7 +125,14 @@ function getSingleStudentData(queryName) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
 // GET PENGELUARAN
+// Membaca sheet "Pengeluaran" dan mengembalikan semua baris data.
+// Struktur sheet:
+//   Baris 1 : Judul  "DAFTAR PENGELUARAN"
+//   Baris 2 : Header kolom → Tanggal | Nama PIC | Pembelian | Kategori | Harga | Lampiran | Deskripsi
+//   Baris 3+ : Data
+// ─────────────────────────────────────────────────────────────
 function getPengeluaranData() {
   try {
     var sheet = getSheet("Pengeluaran") || findSheetByKeyword(["PENGELUARAN"]);
@@ -134,6 +141,7 @@ function getPengeluaranData() {
     var data = sheet.getDataRange().getValues();
     Logger.log("Pengeluaran rows: " + data.length);
 
+    // Cari baris header (baris yang mengandung kata "Tanggal" di kolom pertama)
     var headerRowIdx = -1;
     for (var i = 0; i < data.length; i++) {
       var firstCell = String(data[i][0]).trim().toLowerCase();
@@ -143,11 +151,12 @@ function getPengeluaranData() {
       }
     }
 
+    // Fallback: asumsikan header di baris ke-2 (index 1) seperti di screenshot
     if (headerRowIdx === -1) headerRowIdx = 1;
 
     Logger.log("Header row index: " + headerRowIdx);
 
-    // Mapping header
+    // Mapping header → index kolom (fleksibel terhadap urutan kolom)
     var headerRow = data[headerRowIdx];
     var colMap = {};
     for (var j = 0; j < headerRow.length; j++) {
@@ -167,6 +176,7 @@ function getPengeluaranData() {
     for (var r = headerRowIdx + 1; r < data.length; r++) {
       var row = data[r];
 
+      // Skip baris kosong (cek kolom pembelian atau tanggal)
       var pembelianVal = colMap.pembelian !== undefined ? String(row[colMap.pembelian]).trim() : "";
       var tanggalVal   = colMap.tanggal   !== undefined ? row[colMap.tanggal] : "";
       if (!pembelianVal && !tanggalVal) continue;
@@ -181,7 +191,7 @@ function getPengeluaranData() {
         }
       }
 
-      // Parse harga
+      // Parse harga — bisa berupa angka langsung atau string "Rp265,000"
       var hargaRaw  = colMap.harga !== undefined ? row[colMap.harga] : 0;
       var hargaNum  = 0;
       if (typeof hargaRaw === "number") {
@@ -211,7 +221,115 @@ function getPengeluaranData() {
   }
 }
 
+// GET SHAREHOLDERS
+function getShareholdersData() {
+  try {
+    var sheet = getSheet("Dashboard") || findSheetByKeyword(["DASHBOARD"]);
+    if (!sheet) return errorOut("Sheet 'Dashboard' tidak ditemukan");
+
+    var data = sheet.getDataRange().getValues();
+    Logger.log("Dashboard rows for shareholders: " + data.length);
+
+    // Cari baris header tabel Shareholders (mengandung "NAME" dan "FUNDS")
+    var headerRowIdx = -1;
+    for (var i = 0; i < data.length; i++) {
+      var rowText = data[i].join(" ").toUpperCase();
+      if (rowText.indexOf("NAME") >= 0 && rowText.indexOf("FUNDS") >= 0) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) {
+      return errorOut("Tabel Shareholders tidak ditemukan di sheet Dashboard");
+    }
+
+    Logger.log("Shareholders header row: " + headerRowIdx);
+
+    // Mapping kolom dari baris header
+    var headerRow = data[headerRowIdx];
+    var colName = -1, colFunds = -1, colPercent = -1;
+    for (var j = 0; j < headerRow.length; j++) {
+      var h = String(headerRow[j]).trim().toUpperCase();
+      if (h === "NAME")    colName    = j;
+      if (h === "FUNDS")   colFunds   = j;
+      if (h === "PERCENT") colPercent = j;
+    }
+
+    Logger.log("Cols → NAME:" + colName + " FUNDS:" + colFunds + " PERCENT:" + colPercent);
+
+    if (colName === -1 || colFunds === -1) {
+      return errorOut("Kolom NAME atau FUNDS tidak ditemukan");
+    }
+
+    var shareholders = [];
+    var total_funds  = 0;
+
+    for (var r = headerRowIdx + 1; r < data.length; r++) {
+      var row      = data[r];
+      var nameVal  = colName  >= 0 ? String(row[colName]).trim()  : "";
+      var fundsRaw = colFunds >= 0 ? row[colFunds] : 0;
+
+      // Berhenti jika baris kosong atau keluar dari area tabel
+      if (!nameVal) break;
+
+      // Baris TOTAL — simpan sebagai total, jangan masuk list shareholders
+      if (nameVal.toUpperCase() === "TOTAL") {
+        var totalRaw = typeof fundsRaw === "number" ? fundsRaw : parseFloat(String(fundsRaw).replace(/[^0-9.]/g, "")) || 0;
+        total_funds  = totalRaw;
+        continue;
+      }
+
+      // Parse funds
+      var fundsNum = 0;
+      if (typeof fundsRaw === "number") {
+        fundsNum = fundsRaw;
+      } else {
+        var cleanedF = String(fundsRaw).replace(/[^0-9]/g, "");
+        fundsNum = cleanedF ? parseInt(cleanedF) : 0;
+      }
+
+      // Parse percent — bisa berupa number (0.5483) atau string "54.83%"
+      var percentNum = 0;
+      if (colPercent >= 0) {
+        var percentRaw = row[colPercent];
+        if (typeof percentRaw === "number") {
+          // Google Sheets menyimpan persentase sebagai desimal (0.5483 = 54.83%)
+          percentNum = percentRaw <= 1 ? percentRaw * 100 : percentRaw;
+        } else {
+          var cleanedP = String(percentRaw).replace(/[^0-9.]/g, "");
+          percentNum = cleanedP ? parseFloat(cleanedP) : 0;
+        }
+      }
+
+      shareholders.push({
+        name:    nameVal,
+        funds:   fundsNum,
+        percent: Math.round(percentNum * 100) / 100  // bulatkan 2 desimal
+      });
+    }
+
+    // Hitung total dari funds jika belum ada
+    if (total_funds === 0 && shareholders.length > 0) {
+      total_funds = shareholders.reduce(function(sum, s) { return sum + s.funds; }, 0);
+    }
+
+    Logger.log("Shareholders found: " + shareholders.length + " | Total: " + total_funds);
+    return successOut({
+      shareholders: shareholders,
+      total_funds:  total_funds,
+      count:        shareholders.length
+    });
+
+  } catch (err) {
+    Logger.log("ERROR getShareholders: " + err);
+    return errorOut("Error: " + err.toString());
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // DASHBOARD
+// ─────────────────────────────────────────────────────────────
 function getDashboardData() {
   try {
     var sheet = getSheet("Dashboard") || findSheetByKeyword(["DASHBOARD"]);
@@ -243,9 +361,11 @@ function getDashboardData() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
 // HELPERS
+// ─────────────────────────────────────────────────────────────
 
-/** Cek cell checkbox*/
+/** Cek apakah cell checkbox dicentang */
 function isCellChecked(cell) {
   if (cell === true)  return true;
   if (cell === false) return false;
@@ -253,6 +373,7 @@ function isCellChecked(cell) {
   return (s === "true" || s === "✓" || s === "✅" || s === "✔" || s === "x" || s === "v" || s === "1");
 }
 
+/** Bangun map { colIndex: "yyyy-MM-dd" } dari baris header */
 function buildDateColumns(headerRow) {
   var cols = {};
   for (var i = 2; i < headerRow.length; i++) {
@@ -270,6 +391,7 @@ function buildDateColumns(headerRow) {
 }
 
 function parseDateFromHeader(cell) {
+  // Kalau cell adalah Date object dari Sheets
   if (cell instanceof Date) {
     var d = Utilities.formatDate(cell, "Asia/Jakarta", "yyyy-MM-dd");
     Logger.log("Date object: " + d);
