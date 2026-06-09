@@ -406,7 +406,7 @@ pip install -r config/requirements.txt --force-reinstall
 
 - **Issues**: Buka di GitHub Issues
 - **Discussion**: GitHub Discussions
-- **Email**: techfour@example.com
+- **Email**: jundulloh2109@gmail.com
 
 ---
 
@@ -419,10 +419,10 @@ Proyek ini dilisensikan di bawah [MIT License](LICENSE) - silakan gunakan dengan
 ## 🙏 Terima Kasih
 
 Terima kasih kepada:
+- Mahasiswa 02TPLE04 yang berkontribusi
+- Universitas Pamulang
 - Discord.py Community
-- Google DevRel team
-- Mahasiswa 01TPLE04 yang berkontribusi
 
-**Made with ❤️ by Techfour Team**
+**Made with ❤️ by Techfourma Team**
 
-Last Updated: March 2026
+Last Updated: May 2026
