@@ -76,12 +76,12 @@ from src.jadwal_kuliah import create_background_tasks
 create_background_tasks(bot, GENERAL_CHANNEL_ID)
 
 # Import message handler
-from src.message_handler import on_message
+from src.message_handler import handle_message as message_handler
 
 # Register the on_message event
 @bot.event
-async def on_message_event(msg):
-    await on_message(
+async def on_message(msg):
+    await message_handler(
         msg=msg,
         bot_ref=bot,
         ai_service=ai_bot_service,
@@ -93,8 +93,6 @@ async def on_message_event(msg):
         UANG_KAS_AVAILABLE=UANG_KAS_AVAILABLE,
         GENERAL_CHANNEL_ID=GENERAL_CHANNEL_ID
     )
-
-bot.on_message(on_message_event)
 
 # Run bot
 if __name__ == "__main__":
