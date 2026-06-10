@@ -7,6 +7,7 @@ Bot Discord berbasis **AI multi-engine** dengan integrasi **Google Gemini**, dir
 ---
 
 ## 📋 Daftar Isi
+
 - [🚀 Overview](#-overview)
 - [✨ Fitur Utama](#-fitur-utama)
 - [🏗️ Struktur Proyek](#-struktur-proyek)
@@ -16,13 +17,17 @@ Bot Discord berbasis **AI multi-engine** dengan integrasi **Google Gemini**, dir
 - [🎯 Cara Menggunakan](#-cara-menggunakan)
 - [📁 Dokumentasi Service](#-dokumentasi-service)
 - [🚀 Deployment](#-deployment)
+- [🔄 Workflow Development](#-workflow-development)
 - [📝 Kontribusi](#-kontribusi)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [📞 Support](#-support--contact)
 
 ---
 
 ## 🚀 Overview
 
 Techfour Discord Bot adalah solusi AI terpadu yang memudahkan mahasiswa dan dosen untuk:
+
 - ❓ **Tanya Jawab Akademik** - Menjawab pertanyaan dengan context yang sesuai
 - 💻 **Bantuan Coding** - Debugging dan penjelasan konsep programming
 - 📐 **Problem Solving** - Diskusi matematika dan logika
@@ -54,34 +59,127 @@ Techfour Discord Bot adalah solusi AI terpadu yang memudahkan mahasiswa dan dose
 ```
 discord-bot/
 │
-├── main.py                          # Bot Core - Discord Event Handler
+├── run.py                          # 🚀 Main Entry Point - Bot Core & Event Handler
 │
-├── services/                        # Business Logic Layer
-│   ├── __init__.py
-│   ├── ai_bot_service.py           # Multi-engine AI Service
-│   ├── uang_kas_service.py         # Finance Management Service  
-│   └── spreadsheet_service.js      # Google Apps Script (Backend)
+├── src/                            # Core Bot Modules
+│   ├── __init__.py                # Package initialization & exports
+│   ├── bot.py                     # Discord bot instance & utilities
+│   ├── message_handler.py         # Message routing & command handling
+│   ├── health_server.py           # HTTP health check server
+│   ├── logger.py                  # Logging setup & webhook integration
+│   ├── jadwal_kuliah.py           # Class schedule management & reminders
+│   ├── uang_kas.py                # Money tracking commands
+│   ├── pengeluaran.py             # Expense management commands
+│   ├── parser.py                  # Date/month parsing utilities
+│   └── ocr.py                     # Image/PDF text extraction
+│
+├── services/                       # Business Logic Layer
+│   ├── __init__.py                # Service package initialization
+│   ├── ai_bot_service.py          # Multi-engine AI routing service
+│   ├── uang_kas_service.py        # Finance management with Google Sheets
+│   ├── spreadsheet_service.js     # Google Apps Script backend
+│   └── spreadsheet_log.js         # Spreadsheet logging utility
 │
 ├── config/                         # Reference Configuration Files
-│   ├── requirements.txt            # (Reference copy)
-│   └── runtime.txt                 # (Reference copy)
+│   ├── requirements.txt           # Python dependencies (reference)
+│   └── runtime.txt                # Python version (reference)
 │
 ├── requirements.txt                # 📌 Dependencies (Root - for Deployment)
 ├── runtime.txt                     # 📌 Python Version (Root - for Deployment)
 ├── jadwal_kuliah.txt              # Schedule Data (Text Format)
 ├── .env                           # Environment Variables (Git Ignored)
 ├── .gitignore                     # Git Ignore Rules
-├── Procfile                       # Deployment Config (Heroku/Railway)
-└── README.md                      # This File
-
+├── Dockerfile                     # Container configuration
+├── .dockerignore                  # Docker ignore rules
+├── README.md                      # This File
+└── CONTRIBUTING.md                # Contribution Guidelines
 ```
 
 **⚠️ Deployment Notes:**
 - `requirements.txt` & `runtime.txt` **HARUS** di root directory untuk Railway/Heroku
 - Folder `config/` adalah reference copy untuk development
+- Entry point utama adalah `run.py`, bukan `main.py`
 
+---
 
-### 📂 Service Breakdown
+### 📂 Module Breakdown
+
+#### **src/bot.py** 🤖
+Mengelola instance Discord bot, rate limiting, activity tracking, dan utility functions.
+
+**Kelas/Fungsi Utama:**
+- `TechfourBot` - Custom bot class
+- `create_bot()` - Bot factory function
+- `rate_limiter` - Request rate limiting
+- `activity_tracker` - User activity monitoring
+- `is_admin()` - Admin role checker
+
+---
+
+#### **src/message_handler.py** 📨
+Menangani routing pesan masuk dan eksekusi command berdasarkan prefix/konten.
+
+**Fungsi Utama:**
+- `on_message()` - Main message handler dengan integrasi AI, uang kas, dan jadwal
+
+---
+
+#### **src/jadwal_kuliah.py** 📅
+Mengelola parsing jadwal kuliah dari file teks dan pengiriman reminder otomatis.
+
+**Fitur:**
+- Parsing file `jadwal_kuliah.txt`
+- Daily reminder (Jumat & Minggu 08.00 WIB)
+- UTS/UAS reminder
+- Query jadwal per tanggal/minggu
+
+**Fungsi Utama:**
+- `parse_jadwal_file()` - Parse schedule file
+- `get_jadwal_for_date()` - Get schedule for specific date
+- `daily_jadwal_reminder()` - Automated daily reminder
+- `uts_uas_reminder()` - Exam period reminder
+
+---
+
+#### **src/uang_kas.py** 💰
+Command handler untuk manajemen uang kas kelas.
+
+**Fitur:**
+- Cek saldo individu
+- Rekap total uang kas
+- Riwayat pembayaran
+
+---
+
+#### **src/pengeluaran.py** 💸
+Command handler untuk pencatatan dan tracking pengeluaran kelas.
+
+---
+
+#### **src/ocr.py** 📸
+Menangani ekstraksi teks dari gambar atau PDF yang diunggah.
+
+**Fitur:**
+- OCR menggunakan Google Gemini Vision
+- Support multiple image formats
+- PDF text extraction
+
+---
+
+#### **src/parser.py** 🔍
+Utility functions untuk parsing tanggal, bulan, dan nama mahasiswa dari input user.
+
+---
+
+#### **src/logger.py** 📝
+Setup logging dan integrasi Discord webhook untuk monitoring error.
+
+---
+
+#### **src/health_server.py** 🏥
+HTTP server sederhana untuk health check endpoint (`/health`).
+
+---
 
 #### **services/ai_bot_service.py** 🧠
 Intelligent AI routing engine yang memilih model terbaik untuk setiap pertanyaan.
@@ -96,7 +194,7 @@ Intelligent AI routing engine yang memilih model terbaik untuk setiap pertanyaan
 
 ---
 
-#### **services/uang_kas_service.py** 💰
+#### **services/uang_kas_service.py** 💼
 Service untuk manajemen uang kas kelas dengan integrasi Google Spreadsheet via Apps Script.
 
 **Fitur:**
@@ -131,7 +229,7 @@ Google Apps Script backend untuk integrasi spreadsheet dengan Discord Bot.
 | **HTTP Client** | aiohttp (async) |
 | **Scheduling** | discord.py tasks |
 | **Logging** | Python logging + Discord Webhook |
-| **Deployment** | Railway / Heroku |
+| **Deployment** | Railway / Heroku / Docker |
 
 ---
 
@@ -158,7 +256,7 @@ venv\Scripts\activate
 
 ### 3️⃣ Install Dependencies
 ```bash
-pip install -r config/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 4️⃣ Konfigurasi Environment File
@@ -177,6 +275,7 @@ Buat file `.env` dengan variabel berikut:
 ```env
 # Discord
 DISCORD_TOKEN=your_discord_bot_token_here
+GENERAL_CHANNEL_ID=your_channel_id_for_reminders
 
 # AI APIs
 GEMINI_API_KEY=your_gemini_api_key
@@ -200,6 +299,7 @@ PORT=8080  # Default untuk health check
 1. Buka Discord Developer Portal: https://discord.com/developers/applications
 2. Create New Application → Buat bot
 3. Copy token di "TOKEN" section
+4. Pastikan "Message Content Intent" aktif di Bot settings
 
 **Gemini API Key:**
 1. Pergi ke Google AI Studio: https://ai.google.dev/
@@ -233,7 +333,7 @@ Akan di-route ke Wolfram Alpha untuk perhitungan presisi.
 
 #### 3. **Coding Help**
 ```
-@Techfour Bot Jelaskan code ini: 
+@Techfour Bot Jelaskan code ini:
 def factorial(n):
     return 1 if n <= 1 else n * factorial(n-1)
 ```
@@ -242,6 +342,26 @@ def factorial(n):
 ```
 @Techfour Bot [Attach image/PDF]
 Apa yang tertulis di gambar ini?
+```
+
+#### 5. **Jadwal Kuliah**
+```
+!jadwal              - Lihat jadwal hari ini
+!jadwal besok        - Lihat jadwal besok
+!jadwal minggu ini   - Lihat jadwal minggu ini
+!jadwal next week    - Lihat jadwal minggu depan
+```
+
+#### 6. **Uang Kas**
+```
+!uangkas             - Cek saldo kamu
+!uangkas @username   - Cek saldo user lain
+!rekap               - Rekap total uang kas
+```
+
+#### 7. **Pengeluaran**
+```
+!pengeluaran         - Lihat riwayat pengeluaran
 ```
 
 ### Rate Limiting
@@ -253,35 +373,48 @@ Apa yang tertulis di gambar ini?
 
 ## 📁 Dokumentasi Service
 
-### SmartAIService (ai_bot_service.py)
+### SmartAIService (services/ai_bot_service.py)
 
 ```python
-from services.ai_bot_service import SmartAIService
-
-service = SmartAIService()
+from services.ai_bot_service import ai_bot_service
 
 # Get AI response
-response = await service.get_response(
+response = await ai_bot_service.get_response(
     prompt="Jelaskan konsep OOP",
     user_id="123456789",
     image_bytes=None  # Optional untuk OCR
 )
 ```
 
-### UangKasService (uang_kas_service.py)
+### UangKasService (services/uang_kas_service.py)
 
 ```python
-from services.uang_kas_service import UangKasService
-
-service = UangKasService()
+from services.uang_kas_service import uang_kas_service
 
 # Initialize
-await service.initialize()
+await uang_kas_service.initialize()
 
 # Get data
-students = await service.get_all_students()
-dashboard = await service.get_dashboard_data()
-student = await service.get_student_data("John Doe")
+students = await uang_kas_service.get_all_students()
+dashboard = await uang_kas_service.get_dashboard_data()
+student = await uang_kas_service.get_student_data("John Doe")
+```
+
+### Bot Utilities (src/bot.py)
+
+```python
+from src.bot import is_admin, rate_limiter, activity_tracker
+
+# Check if user is admin
+if is_admin(user):
+    # Admin privileges
+
+# Check rate limit
+if not rate_limiter.is_rate_limited(user_id):
+    # Process request
+
+# Track activity
+activity_tracker.track(user_id)
 ```
 
 ---
@@ -312,6 +445,15 @@ heroku config:set DISCORD_TOKEN=xxx
 git push heroku main
 ```
 
+### Option 3: Docker
+```bash
+# Build image
+docker build -t techfour-bot .
+
+# Run container
+docker run -d --env-file .env --name techfour-bot techfour-bot
+```
+
 ### Health Check
 Bot menyediakan health endpoint:
 ```bash
@@ -330,9 +472,9 @@ git checkout -b feature/nama-fitur
 
 ### 2. Buat/Edit Code
 ```bash
-# Edit file di services/
+# Edit file di src/ atau services/
 # Test locally
-python3 main.py
+python3 run.py
 ```
 
 ### 3. Commit & Push
@@ -375,6 +517,42 @@ Kami terbuka untuk kontribusi! 🎉
 - Follow **PEP 8** untuk Python
 - Naming convention: `snake_case` untuk function/variable
 - Tambahkan error handling & logging
+- Tulis unit test untuk fitur baru
+
+### Pull Request Template
+
+**Title Format:**
+```
+type: short description
+```
+
+**Types:**
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Adding tests
+- `chore:` - Maintenance tasks
+
+**Description:**
+```markdown
+## 📝 Description
+Brief description of changes
+
+## ✨ Changes Made
+- List of key changes
+
+## ✅ Testing
+- [ ] Tested locally
+- [ ] No breaking changes
+
+## 📊 Checklist
+- [ ] Code follows style guidelines
+- [ ] Documentation updated
+- [ ] Tests added/updated
+```
+
+Lihat [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan lengkap.
 
 ---
 
@@ -383,8 +561,9 @@ Kami terbuka untuk kontribusi! 🎉
 ### Bot Not Responding
 ```
 ✓ Cek DISCORD_TOKEN valid
-✓ Cek Message Content Intent aktif
+✓ Cek Message Content Intent aktif di Discord Developer Portal
 ✓ Restart bot
+✓ Cek logs di console
 ```
 
 ### API Error
@@ -392,21 +571,45 @@ Kami terbuka untuk kontribusi! 🎉
 ✓ Cek semua API keys di .env
 ✓ Check quota limits
 ✓ Lihat logs di console
+✓ Test API endpoints manually
 ```
 
 ### Import Error
 ```bash
 # Re-install dependencies
-pip install -r config/requirements.txt --force-reinstall
+pip install -r requirements.txt --force-reinstall
+
+# Check Python version (must be 3.10+)
+python3 --version
+```
+
+### ModuleNotFoundError
+```bash
+# Ensure you're running from project root
+cd /path/to/discord-bot
+python3 run.py
+
+# Check if services/__init__.py exists
+ls services/__init__.py
+```
+
+### Connection Issues
+```bash
+# Check internet connection
+ping google.com
+
+# Check Discord status
+https://discordstatus.com/
 ```
 
 ---
 
 ## 📞 Support & Contact
 
-- **Issues**: Buka di GitHub Issues
-- **Discussion**: GitHub Discussions
+- **Issues**: Buka di [GitHub Issues](https://github.com/Techfourma/discord-bot/issues)
+- **Discussion**: [GitHub Discussions](https://github.com/Techfourma/discord-bot/discussions)
 - **Email**: jundulloh2109@gmail.com
+- **Documentation**: See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
 
 ---
 
@@ -422,7 +625,11 @@ Terima kasih kepada:
 - Mahasiswa 02TPLE04 yang berkontribusi
 - Universitas Pamulang
 - Discord.py Community
+- Google AI Team
+- Wolfram Alpha Team
 
 **Made with ❤️ by Techfourma Team**
 
-Last Updated: May 2026
+---
+
+Last Updated: June 2025
