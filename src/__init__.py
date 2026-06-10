@@ -22,7 +22,7 @@ from src.parser import (
     extract_student_name,
 )
 from src.ocr import handle_ocr_attachment
-from src.message_handler import on_message
+from src.message_handler import handle_message
 from src.health_server import start_health_server
 
 __all__ = [
@@ -53,6 +53,6 @@ __all__ = [
     'parse_month_year_from_prompt',
     'extract_student_name',
     'handle_ocr_attachment',
-    'on_message',
+    'handle_message',
     'start_health_server',
 ]

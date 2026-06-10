@@ -12,10 +12,10 @@ TOXIC_WORDS = [
 ]
 
 
-async def on_message(msg: discord.Message, bot_ref, ai_service, rate_limiter,
-                     activity_tracker, is_admin_func, DISCORD_TOKEN: str,
-                     uang_kas_service, UANG_KAS_AVAILABLE: bool,
-                     GENERAL_CHANNEL_ID: int):
+async def handle_message(msg: discord.Message, bot_ref, ai_service, rate_limiter,
+                         activity_tracker, is_admin_func, DISCORD_TOKEN: str,
+                         uang_kas_service, UANG_KAS_AVAILABLE: bool,
+                         GENERAL_CHANNEL_ID: int):
     """
     Handle incoming messages.
 
