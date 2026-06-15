@@ -5,9 +5,7 @@ from typing import Dict, List, Optional
 from discord.ext import tasks
 
 logger = logging.getLogger(__name__)
-
 WIB = dt_timezone(timedelta(hours=7))
-
 
 def format_jadwal_entry(jadwal: Dict) -> str:
     """Format a single jadwal entry for display."""
@@ -64,7 +62,7 @@ def parse_date_from_header(header: str):
             'july': 7, 'august': 8, 'october': 10, 'december': 12
         }
 
-        # Pattern: "DD Month - DD Month YYYY"
+        # Pattern: "DD Month - DD Month YYYY" or "DD Month - DD Month"
         date_pattern = r'(\d{1,2})\s+([A-Za-z]+)\s*-\s*(\d{1,2})\s+([A-Za-z]+)'
         match = re.search(date_pattern, header)
 
@@ -81,6 +79,21 @@ def parse_date_from_header(header: str):
             end_date = datetime(year, end_month, end_day).date()
 
             return start_date, end_date
+
+        # Pattern: "DayName, DD Month YYYY" (e.g., "Sabtu, 07 Maret 2026")
+        day_date_pattern = r'([A-Za-z]+),?\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})'
+        day_match = re.search(day_date_pattern, header)
+        if day_match:
+            day_name = day_match.group(1).lower()
+            day_num = int(day_match.group(2))
+            month_name = day_match.group(3).lower()
+            year = int(day_match.group(4))
+
+            month_num = month_map.get(month_name)
+            if month_num:
+                start_date = datetime(year, month_num, day_num).date()
+                end_date = start_date  # Single day event
+                return start_date, end_date
 
         # Pattern with day name: "DD Month - DayName"
         if " - " in header:
@@ -227,6 +240,16 @@ def get_jadwal_next_week() -> List[Dict]:
     return get_jadwal_range(7, 13)
 
 
+def _parse_dates_from_content(content: str):
+    """Parse dates from content text (for UTS/UAS entries)."""
+    lines = content.split('\n')
+    for line in lines:
+        start_date, end_date = parse_date_from_header(line.strip())
+        if start_date:
+            return start_date, end_date
+    return None, None
+
+
 def find_jadwal_by_month(month: int, year: Optional[int] = None) -> List[Dict]:
     """Cari semua entry jadwal yang mencakup bulan (dan tahun) tertentu."""
     jadwal_list = parse_jadwal_file()
@@ -235,8 +258,20 @@ def find_jadwal_by_month(month: int, year: Optional[int] = None) -> List[Dict]:
     for jadwal in jadwal_list:
         if jadwal.get('header') == 'Error':
             continue
+
         s_date = jadwal.get('start_date')
         e_date = jadwal.get('end_date')
+
+        # Try to parse dates from content if header doesn't have dates
+        if not s_date or not e_date:
+            parsed_s, parsed_e = _parse_dates_from_content(jadwal.get('content', ''))
+            if parsed_s:
+                s_date = parsed_s
+                e_date = parsed_e
+                # Update the jadwal dict with parsed dates
+                jadwal['start_date'] = s_date
+                jadwal['end_date'] = e_date
+
         if not s_date or not e_date:
             continue
 
@@ -254,10 +289,6 @@ def find_jadwal_by_month(month: int, year: Optional[int] = None) -> List[Dict]:
 
 
 def _is_uts_uas_entry(jadwal: Dict) -> tuple:
-    """
-    Cek apakah entry jadwal merupakan UTS atau UAS yang SEBENARNYA.
-    Mengembalikan (True/False, tipe: 'UTS'|'UAS'|'').
-    """
     header = jadwal.get('header', '').upper()
 
     if '=== UAS ===' in header or header.strip() == 'UAS':
@@ -317,9 +348,6 @@ def find_upcoming_uts_uas(exam_type: str) -> Optional[Dict]:
 
 
 def get_jadwal_next_week_with_exam() -> List[Dict]:
-    """
-    Sama seperti get_jadwal_next_week() tetapi TIDAK membuang entry UTS/UAS.
-    """
     return get_jadwal_range(7, 13)
 
 
@@ -365,7 +393,6 @@ def _get_general_channel(bot, GENERAL_CHANNEL_ID: int):
     )
 
 
-# Background tasks - need to be created with bot reference
 daily_jadwal_reminder = None
 uts_uas_reminder = None
 
@@ -416,10 +443,6 @@ def create_background_tasks(bot, GENERAL_CHANNEL_ID: int):
 
     @tasks.loop(time=datetime.now(WIB).replace(hour=8, minute=5, second=0, microsecond=0).time())
     async def _uts_uas_reminder():
-        """
-        Background task: kirim reminder 2 minggu sebelum UTS/UAS.
-        Berjalan setiap hari Senin pukul 08:05 WIB.
-        """
         today = datetime.now(WIB).date()
         if today.weekday() != 0:  # Hanya Senin
             return
@@ -478,7 +501,6 @@ async def handle_jadwal_request(msg, user_prompt: str, bot_ref, GENERAL_CHANNEL_
 
     if any(kw in prompt_lower for kw in uts_keywords) and \
        not any(kw in prompt_lower for kw in uas_keywords):
-        # Request jadwal UTS
         jadwal = find_upcoming_uts_uas('UTS')
         if jadwal:
             await msg.channel.send(_format_exam_entry(jadwal, 'UTS')[:2000])
@@ -487,7 +509,6 @@ async def handle_jadwal_request(msg, user_prompt: str, bot_ref, GENERAL_CHANNEL_
         return True
 
     if any(kw in prompt_lower for kw in uas_keywords):
-        # Request jadwal UAS
         jadwal = find_upcoming_uts_uas('UAS')
         if jadwal:
             await msg.channel.send(_format_exam_entry(jadwal, 'UAS')[:2000])
