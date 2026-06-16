@@ -1,11 +1,17 @@
 import logging
 import re
+import os
 from datetime import datetime, timedelta, timezone as dt_timezone
 from typing import Dict, List, Optional
 from discord.ext import tasks
 
 logger = logging.getLogger(__name__)
 WIB = dt_timezone(timedelta(hours=7))
+
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+JADWAL_FILE_PATH = os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt')
 
 def format_jadwal_entry(jadwal: Dict) -> str:
     """Format a single jadwal entry for display."""
@@ -81,10 +87,9 @@ def parse_date_from_header(header: str):
             return start_date, end_date
 
         # Pattern: "DayName, DD Month YYYY" (e.g., "Sabtu, 07 Maret 2026")
-        day_date_pattern = r'([A-Za-z]+),?\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})'
+        day_date_pattern = r'([A-Za-z]+),\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})'
         day_match = re.search(day_date_pattern, header)
         if day_match:
-            day_name = day_match.group(1).lower()
             day_num = int(day_match.group(2))
             month_name = day_match.group(3).lower()
             year = int(day_match.group(4))
@@ -131,7 +136,7 @@ def parse_date_from_header(header: str):
 def parse_jadwal_file() -> List[Dict]:
     """Membaca dan memecah file jadwal, lalu mengeluarkan daftar entry."""
     try:
-        with open('jadwal_kuliah.txt', 'r', encoding='utf-8') as file:
+        with open(JADWAL_FILE_PATH, 'r', encoding='utf-8') as file:
             content = file.read()
 
         sections = re.split(r'-{3,}\s*\n', content)
@@ -159,11 +164,11 @@ def parse_jadwal_file() -> List[Dict]:
                 "end_date": end_date,
             })
 
-        logger.info(f"✅ Parsed {len(jadwal_list)} jadwal")
+        logger.info(f"✅ Parsed {len(jadwal_list)} jadwal from {JADWAL_FILE_PATH}")
         return jadwal_list
 
     except FileNotFoundError:
-        logger.error("❌ jadwal_kuliah.txt not found")
+        logger.error(f"❌ {JADWAL_FILE_PATH} not found")
         return [{"header": "Error", "content": "File tidak ditemukan", "raw": "Error", "start_date": None, "end_date": None}]
     except Exception as e:
         logger.error(f"❌ Error parsing jadwal: {e}")
