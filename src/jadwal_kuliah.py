@@ -424,7 +424,7 @@ def create_background_tasks(bot, GENERAL_CHANNEL_ID: int):
         window_end   = today + timedelta(days=14)
 
         for exam_label, emoji in (('UTS', '📝'), ('UAS', '🎓')):
-            for j in parse_jadwal_file():
+            for j in parse_collection_file():
                 is_exam, detected = _is_uts_uas_entry(j)
                 if not is_exam or detected != exam_label:
                     continue
