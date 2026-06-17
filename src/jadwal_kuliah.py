@@ -11,30 +11,37 @@ WIB = dt_timezone(timedelta(hours=7))
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__)) 
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)                   
 
-def _find_jadwal_file() -> str:
+def _find_collection_file() -> str:
     candidates = [
-        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),      # /workspace/jadwal_kuliah.txt
-        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),      # /workspace/src/jadwal_kuliah.txt
-        '/workspace/jadwal_kuliah.txt',                        # Absolute path to workspace
-        '/app/jadwal_kuliah.txt',                              # For Docker container
-        './jadwal_kuliah.txt',                                 # Current working directory
-        os.path.join(os.getcwd(), 'jadwal_kuliah.txt'),        # Explicit cwd path
+        os.path.join(SCRIPT_DIR, 'collection_data.txt'),  
+        '/app/src/collection_data.txt',                   
+        os.path.join(PROJECT_ROOT, 'collection_data.txt'),
+        '/workspace/collection_data.txt',                 
+        '/app/collection_data.txt',                       
+        './collection_data.txt',                          
+        os.path.join(os.getcwd(), 'collection_data.txt'), 
     ]
 
     for path in candidates:
         abs_path = os.path.abspath(path)
         if os.path.exists(abs_path):
-            logger.info(f"📂 Found jadwal file at: {abs_path}")
+            logger.info(f"✅ Found collection file at: {abs_path}")
             return abs_path
 
-    if os.path.exists('/workspace/jadwal_kuliah.txt'):
-        fallback = '/workspace/jadwal_kuliah.txt'
-    elif os.path.exists('/app/jadwal_kuliah.txt'):
-        fallback = '/app/jadwal_kuliah.txt'
+    fallback_paths = [
+        '/app/src/collection_data.txt',
+        '/workspace/src/collection_data.txt',
+        '/workspace/collection_data.txt',
+        '/app/collection_data.txt',
+    ]
+    for fb in fallback_paths:
+        if os.path.exists(fb):
+            fallback = fb
+            break
     else:
-        fallback = os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt')
+        fallback = os.path.join(SCRIPT_DIR, 'collection_data.txt')
 
-    logger.warning(f"⚠️ jadwal_kuliah.txt not found. Tried: {candidates}. Using fallback: {fallback}")
+    logger.warning(f"⚠️ collection_data.txt not found. Tried: {candidates}. Using fallback: {fallback}")
     return fallback
 
 # Constants
@@ -104,17 +111,13 @@ def _parse_dates_from_content(content: str) -> Tuple[Optional[date], Optional[da
     return None, None
 
 # File parsing
-def parse_jadwal_file() -> List[Dict]:
-    """
-    Baca jadwal_kuliah.txt dan kembalikan list dict entry jadwal.
-    Setiap dict: {header, content, start_date, end_date}
-    """
-    jadwal_path = _find_jadwal_file()
+def parse_collection_file() -> List[Dict]:
+    collection_path = _find_collection_file()
     try:
-        with open(jadwal_path, 'r', encoding='utf-8') as f:
+        with open(collection_path, 'r', encoding='utf-8') as f:
             raw = f.read()
     except FileNotFoundError:
-        logger.error(f"❌ File tidak ditemukan: {jadwal_path}")
+        logger.error(f"❌ File tidak ditemukan: {collection_path}")
         return []
     except Exception as e:
         logger.error(f"❌ Gagal membaca file: {e}")
@@ -147,7 +150,7 @@ def parse_jadwal_file() -> List[Dict]:
             'end_date':   e_date,
         })
 
-    logger.info(f"✅ Parsed {len(jadwal_list)} jadwal entries dari {jadwal_path}")
+    logger.info(f"✅ Parsed {len(jadwal_list)} jadwal entries dari {collection_path}")
     return jadwal_list
 
 # UTS / UAS detection
@@ -176,7 +179,7 @@ def _is_uts_uas_entry(jadwal: Dict) -> Tuple[bool, str]:
 # Query functions
 def get_jadwal_for_date(target_date: date) -> Optional[Dict]:
     """Jadwal yang mencakup tanggal tertentu."""
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         s, e = j['start_date'], j['end_date']
         if s and e and s <= target_date <= e:
             return j
@@ -196,7 +199,7 @@ def get_jadwal_this_week() -> List[Dict]:
     week_start = today - timedelta(days=today.weekday())   # Senin
     week_end   = week_start + timedelta(days=6)             # Minggu
     result = []
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         s, e = j['start_date'], j['end_date']
         if s and e and s <= week_end and e >= week_start:
             result.append(j)
@@ -207,7 +210,7 @@ def get_jadwal_remaining_this_week() -> List[Dict]:
     today = datetime.now(WIB).date()
     week_end = today - timedelta(days=today.weekday()) + timedelta(days=6)
     result = []
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         s, e = j['start_date'], j['end_date']
         if s and e and e >= today and s <= week_end:
             result.append(j)
@@ -220,7 +223,7 @@ def get_jadwal_next_week() -> List[Dict]:
     next_monday = today + timedelta(days=days_to_monday)
     next_sunday = next_monday + timedelta(days=6)
     result = []
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         s, e = j['start_date'], j['end_date']
         if s and e and s <= next_sunday and e >= next_monday:
             result.append(j)
@@ -238,7 +241,7 @@ def find_jadwal_by_month(month: int, year: int) -> List[Dict]:
     month_end   = date(year, month, last_day)
 
     result = []
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         s, e = j['start_date'], j['end_date']
         if s and e and s <= month_end and e >= month_start:
             result.append(j)
@@ -250,7 +253,7 @@ def find_upcoming_uts_uas(exam_type: str) -> Optional[Dict]:
     today     = datetime.now(WIB).date()
     upcoming, past, no_date = [], [], []
 
-    for j in parse_jadwal_file():
+    for j in parse_collection_file():
         is_exam, detected = _is_uts_uas_entry(j)
         if not is_exam or detected != exam_type:
             continue
@@ -322,7 +325,6 @@ def format_jadwal_entry(jadwal: Dict) -> str:
 
 
 async def send_jadwal_list(channel, jadwal_list: List[Dict], header: str = '') -> None:
-    """Kirim list jadwal ke channel Discord, otomatis split jika > 1900 karakter."""
     if not jadwal_list:
         await channel.send("📚 Tidak ada jadwal.")
         return
