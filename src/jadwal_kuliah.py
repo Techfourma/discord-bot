@@ -18,6 +18,7 @@ def _find_jadwal_file() -> str:
         '/workspace/jadwal_kuliah.txt',                        # Absolute path to workspace
         '/app/jadwal_kuliah.txt',                              # For Docker container
         './jadwal_kuliah.txt',                                 # Current working directory
+        os.path.join(os.getcwd(), 'jadwal_kuliah.txt'),        # Explicit cwd path
     ]
 
     for path in candidates:
@@ -26,10 +27,12 @@ def _find_jadwal_file() -> str:
             logger.info(f"📂 Found jadwal file at: {abs_path}")
             return abs_path
 
-    if os.path.exists('/workspace'):
+    if os.path.exists('/workspace/jadwal_kuliah.txt'):
         fallback = '/workspace/jadwal_kuliah.txt'
-    else:
+    elif os.path.exists('/app/jadwal_kuliah.txt'):
         fallback = '/app/jadwal_kuliah.txt'
+    else:
+        fallback = os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt')
 
     logger.warning(f"⚠️ jadwal_kuliah.txt not found. Tried: {candidates}. Using fallback: {fallback}")
     return fallback
