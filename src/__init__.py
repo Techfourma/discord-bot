@@ -2,7 +2,7 @@ from src.bot import bot, TechfourBot, rate_limiter, activity_tracker, is_admin, 
 from src.logger import webhook_logger, logger, setup_logging
 from src.jadwal_kuliah import (
     handle_jadwal_request,
-    parse_jadwal_file,
+    parse_collection_file,
     get_jadwal_for_date,
     get_jadwal_tomorrow,
     get_current_jadwal,
@@ -36,7 +36,7 @@ __all__ = [
     'logger',
     'setup_logging',
     'handle_jadwal_request',
-    'parse_jadwal_file',
+    'parse_collection_file',
     'get_jadwal_for_date',
     'get_jadwal_tomorrow',
     'get_current_jadwal',
