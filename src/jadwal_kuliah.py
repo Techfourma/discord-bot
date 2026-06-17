@@ -13,17 +13,25 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 def _find_jadwal_file() -> str:
     candidates = [
-        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),
-        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),
-        '/app/jadwal_kuliah.txt',
-        '/workspace/jadwal_kuliah.txt',
+        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),      
+        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),      
+        '/workspace/jadwal_kuliah.txt',                        
+        '/app/jadwal_kuliah.txt',                              
+        './jadwal_kuliah.txt',                                 
     ]
     for path in candidates:
-        if os.path.exists(path):
-            logger.info(f"📂 Found jadwal file at: {path}")
-            return path
-    logger.warning(f"⚠️ jadwal_kuliah.txt not found. Tried: {candidates}")
-    return candidates[0]
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            logger.info(f"📂 Found jadwal file at: {abs_path}")
+            return abs_path
+
+    if os.path.exists('/workspace'):
+        fallback = '/workspace/jadwal_kuliah.txt'
+    else:
+        fallback = '/app/jadwal_kuliah.txt'
+
+    logger.warning(f"⚠️ jadwal_kuliah.txt not found. Tried: {candidates}. Using fallback: {fallback}")
+    return fallback
 
 # Constants
 MONTH_MAP: Dict[str, int] = {
