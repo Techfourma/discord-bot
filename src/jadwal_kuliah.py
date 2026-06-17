@@ -13,9 +13,10 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 def _find_jadwal_file() -> str:
     candidates = [
-        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),   
-        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),   
-        '/app/jadwal_kuliah.txt',                           
+        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),
+        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),
+        '/app/jadwal_kuliah.txt',                          
+        '/workspace/jadwal_kuliah.txt',                    
     ]
     for path in candidates:
         if os.path.exists(path):
