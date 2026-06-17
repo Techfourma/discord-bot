@@ -13,12 +13,13 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 def _find_jadwal_file() -> str:
     candidates = [
-        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),      
-        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),      
-        '/workspace/jadwal_kuliah.txt',                        
-        '/app/jadwal_kuliah.txt',                              
-        './jadwal_kuliah.txt',                                 
+        os.path.join(PROJECT_ROOT, 'jadwal_kuliah.txt'),      # /workspace/jadwal_kuliah.txt
+        os.path.join(SCRIPT_DIR,   'jadwal_kuliah.txt'),      # /workspace/src/jadwal_kuliah.txt
+        '/workspace/jadwal_kuliah.txt',                        # Absolute path to workspace
+        '/app/jadwal_kuliah.txt',                              # For Docker container
+        './jadwal_kuliah.txt',                                 # Current working directory
     ]
+
     for path in candidates:
         abs_path = os.path.abspath(path)
         if os.path.exists(abs_path):
